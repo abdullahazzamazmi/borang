@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-RspGNvkCw6sb0NDVuOOJroZSAsSUvHkurRwIngr3rZ0='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
+  <meta name="borang-api" content="TAMPAL_URL_EXEC_DI_SINI">
+  <title>IKRAM — Borang Awam</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0b2d5b">
+  <style>
+  :root {
+    /* Tema biru gelap IKRAM */
+    --kepala: #0b2d5b;        /* bar kepala */
+    --kepala-2: #12407e;      /* hujung gradien kepala */
+    --utama: #12407e;         /* butang, pilihan dipilih */
+    --utama-gelap: #0b2d5b;
+    --utama-lembut: #e9eff8;
+    --aksen-teks: #12407e;    /* label & tajuk kecil */
+    --latar: #f2f5fa;
+    --kad: #ffffff;
+    --teks: #13213a;
+    --redup: #5a6982;
+    --sempadan: #d5ddea;
+    --ralat: #b42318;
+    --ralat-lembut: #fdecea;
+    --amaran-lembut: #fff6e0;
+    --fokus: #2f6fd0;
+    --jejari: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --kepala: #0a1f40;
+      --kepala-2: #0f2d5c;
+      --utama: #2f62b5;
+      --utama-gelap: #24529c;
+      --utama-lembut: #16243d;
+      --aksen-teks: #8fb3ec;
+      --latar: #0b1220;
+      --kad: #121b2c;
+      --teks: #e4ebf6;
+      --redup: #9aa9c2;
+      --sempadan: #26344d;
+      --ralat: #ff8a7a;
+      --ralat-lembut: #3a1d1a;
+      --amaran-lembut: #3a3018;
+      --fokus: #8fb3ec;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--latar);
+    color: var(--teks);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- Kepala & kaki ---------- */
+  .kepala { background: linear-gradient(135deg, var(--kepala), var(--kepala-2)); color: #fff; padding: 12px 16px; }
+  .kepala-dalam { max-width: 560px; margin: 0 auto; display: flex; gap: 12px; align-items: center; }
+  .logo {
+    width: 56px; height: 56px; border-radius: 12px; background: #fff; flex: none;
+    display: grid; place-items: center; padding: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  }
+  .logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .jenama { font-weight: 800; font-size: 16px; letter-spacing: .2px; line-height: 1.25; }
+  .subjudul { font-size: 13px; opacity: .9; }
+  .kaki { text-align: center; color: var(--redup); font-size: 12px; padding: 20px 16px 28px; margin-top: auto; }
+
+  /* ---------- Bekas & kad ---------- */
+  .bekas { width: 100%; max-width: 560px; margin: 0 auto; padding: 16px; }
+  .kad {
+    background: var(--kad); border: 1px solid var(--sempadan); border-radius: var(--jejari);
+    padding: 20px 18px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .kad-muat { text-align: center; padding: 40px 18px; }
+  .kad h1 { font-size: 21px; line-height: 1.3; margin: 0 0 6px; }
+  .kad h2 { font-size: 17px; margin: 0 0 10px; }
+  .redup { color: var(--redup); margin: 0; }
+  .kecil { font-size: 13px; }
+
+  .info-sesi { background: var(--utama-lembut); border-color: transparent; }
+  .info-sesi .label { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--aksen-teks); font-weight: 700; }
+  .info-sesi .program { font-size: 19px; font-weight: 700; margin: 2px 0; }
+  .info-sesi .sesi { margin: 0; }
+  .info-sesi .masa { color: var(--redup); font-size: 14px; margin-top: 4px; }
+
+  .langkah { font-size: 12px; font-weight: 700; color: var(--aksen-teks); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+
+  /* ---------- Butang ---------- */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; min-height: 54px; padding: 12px 18px; margin-top: 12px;
+    border-radius: 12px; border: 2px solid var(--utama);
+    background: var(--utama); color: #fff; font: inherit; font-size: 17px; font-weight: 700;
+    cursor: pointer; text-align: center; -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:hover { background: var(--utama-gelap); border-color: var(--utama-gelap); }
+  .btn-garis { background: transparent; color: var(--aksen-teks); border-color: var(--utama); }
+  .btn-garis:hover { background: var(--utama-lembut); color: var(--aksen-teks); border-color: var(--utama); }
+  .btn-pautan { background: none; border: none; color: var(--redup); min-height: 44px; font-weight: 600; font-size: 15px; }
+  .btn-pautan:hover { background: none; color: var(--teks); }
+  .btn[disabled] { opacity: .6; cursor: progress; }
+  .btn-pilihan { flex-direction: column; align-items: flex-start; text-align: left; min-height: 72px; }
+  .btn-pilihan small { font-weight: 500; font-size: 14px; opacity: .85; }
+  .pemutar-kecil {
+    width: 18px; height: 18px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff;
+    border-radius: 50%; animation: pusing .8s linear infinite;
+  }
+  .btn-garis .pemutar-kecil { border-color: var(--utama-lembut); border-top-color: var(--utama); }
+
+  /* ---------- Medan ---------- */
+  .medan { margin-top: 16px; }
+  .medan > label, .medan > .tajuk-medan, fieldset > legend {
+    display: block; font-weight: 600; margin-bottom: 6px; font-size: 15px;
+  }
+  .wajib { color: var(--ralat); margin-left: 2px; }
+  .pilihan-teg { color: var(--redup); font-weight: 400; font-size: 13px; }
+  input[type=text], input[type=email], input[type=tel], select, textarea {
+    width: 100%; min-height: 50px; padding: 12px 14px; font: inherit; font-size: 16px;
+    color: var(--teks); background: var(--kad); border: 1.5px solid var(--sempadan); border-radius: 10px;
+    appearance: none; -webkit-appearance: none;
+  }
+  select {
+    background-image: linear-gradient(45deg, transparent 50%, var(--redup) 50%), linear-gradient(135deg, var(--redup) 50%, transparent 50%);
+    background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%;
+    background-size: 6px 6px; background-repeat: no-repeat; padding-right: 36px;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  input:focus, select:focus, textarea:focus, .btn:focus-visible, .pil input:focus-visible + span {
+    outline: 3px solid var(--fokus); outline-offset: 2px;
+  }
+  .bantuan { font-size: 13px; color: var(--redup); margin-top: 4px; }
+  .kiraan { font-size: 12px; color: var(--redup); text-align: right; margin-top: 2px; }
+  .medan.salah input, .medan.salah select, .medan.salah textarea { border-color: var(--ralat); }
+  .mesej-medan { color: var(--ralat); font-size: 14px; margin-top: 6px; display: none; }
+  .medan.salah .mesej-medan, fieldset.salah .mesej-medan { display: block; }
+
+  details.tambahan { margin-top: 18px; border-top: 1px dashed var(--sempadan); padding-top: 12px; }
+  details.tambahan summary { cursor: pointer; font-weight: 600; color: var(--aksen-teks); min-height: 40px; display: flex; align-items: center; }
+
+  /* Segmen (jantina, Ya/Tidak) & pil skala */
+  .segmen { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pil { position: relative; flex: 1 1 0; min-width: 0; }
+  .pil input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .pil span {
+    display: flex; align-items: center; justify-content: center; min-height: 50px; padding: 8px 6px;
+    border: 1.5px solid var(--sempadan); border-radius: 10px; font-weight: 600; cursor: pointer;
+    background: var(--kad); text-align: center; user-select: none;
+  }
+  .pil input:checked + span { background: var(--utama); border-color: var(--utama); color: #fff; }
+  .skala .pil span { font-size: 18px; }
+  .hujung-skala { display: flex; justify-content: space-between; font-size: 12px; color: var(--redup); margin-top: 6px; gap: 12px; }
+
+  /* Senarai pilihan (radio/checkbox) */
+  .senarai-pil { display: flex; flex-direction: column; gap: 8px; }
+  .baris-pil {
+    display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; min-height: 50px;
+    border: 1.5px solid var(--sempadan); border-radius: 10px; cursor: pointer; background: var(--kad);
+  }
+  .baris-pil input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--utama); flex: none; }
+  .baris-pil:has(input:checked) { border-color: var(--utama); background: var(--utama-lembut); }
+
+  /* Kotak persetujuan */
+  .setuju {
+    display: flex; gap: 12px; align-items: flex-start; padding: 14px; margin-top: 12px;
+    border: 1.5px solid var(--sempadan); border-radius: 10px; cursor: pointer;
+  }
+  .setuju input { width: 24px; height: 24px; flex: none; margin: 0; accent-color: var(--utama); }
+  .setuju.amaran { background: var(--amaran-lembut); }
+  .notis {
+    max-height: 220px; overflow-y: auto; white-space: pre-line; font-size: 14px; line-height: 1.55;
+    background: var(--latar); border: 1px solid var(--sempadan); border-radius: 10px; padding: 12px 14px;
+  }
+  .versi-notis { font-size: 12px; color: var(--redup); margin-top: 4px; }
+
+  /* Soalan maklum balas */
+  fieldset.soalan { border: none; margin: 0; padding: 18px 0; border-top: 1px solid var(--sempadan); min-width: 0; }
+  fieldset.soalan:first-of-type { border-top: none; padding-top: 4px; }
+  fieldset.soalan legend { padding: 0; margin-bottom: 10px; float: left; width: 100%; }
+  fieldset.soalan legend + * { clear: both; }
+  .no-soalan { color: var(--aksen-teks); font-weight: 800; margin-right: 4px; }
+  .baris-matriks { margin-top: 12px; }
+  .baris-matriks .teks-baris { font-size: 14px; margin-bottom: 6px; }
+  fieldset.salah { background: var(--ralat-lembut); border-radius: 10px; padding-left: 10px; padding-right: 10px; }
+
+  /* Mesej & keputusan */
+  .kotak-ralat {
+    background: var(--ralat-lembut); color: var(--ralat); border-radius: 10px; padding: 12px 14px;
+    margin-top: 14px; font-weight: 600; display: none;
+  }
+  .kotak-ralat.tunjuk { display: block; }
+  .ikon-besar {
+    width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; margin: 4px auto 14px;
+    background: var(--utama-lembut); color: var(--aksen-teks);
+  }
+  .ikon-besar svg { width: 38px; height: 38px; }
+  .ikon-besar.ralat { background: var(--ralat-lembut); color: var(--ralat); }
+  .tengah { text-align: center; }
+  .tengah p { margin: 8px 0 0; }
+
+  .perangkap { position: absolute !important; left: -10000px !important; width: 1px; height: 1px; overflow: hidden; }
+
+  .pemutar {
+    width: 36px; height: 36px; margin: 0 auto 12px; border: 4px solid var(--utama-lembut);
+    border-top-color: var(--utama); border-radius: 50%; animation: pusing .9s linear infinite;
+  }
+  @keyframes pusing { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .pemutar, .pemutar-kecil { animation-duration: 3s; } }
+  @media (min-width: 600px) { .bekas { padding-top: 28px; } .kad { padding: 26px 26px; } }
+</style>
+</head>
+<body>
+  <header class="kepala">
+    <div class="kepala-dalam">
+      <div class="logo"><img src="data:image/png;base64,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" alt="Logo IKRAM" width="48" height="48"></div>
+      <div>
+        <div class="jenama">Pertubuhan IKRAM Malaysia</div>
+        <div class="subjudul" id="subjudul">Borang Awam</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="bekas" id="app" aria-live="polite">
+    <section class="kad kad-muat">
+      <div class="pemutar" aria-hidden="true"></div>
+      <p class="redup">Memuatkan borang…</p>
+    </section>
+  </main>
+
+  <footer class="kaki">
+    Pertubuhan IKRAM Malaysia · Jabatan Pendidikan Masyarakat
+  </footer>
+
+  <noscript><p class="bekas">Borang ini memerlukan JavaScript. Sila aktifkan JavaScript pada pelayar anda.</p></noscript>
+  <script>
+/**
+ * Scripts.html — Frontend borang awam.
+ * - Semua teks daripada pelayan/pengguna dipaparkan dengan textContent (tiada innerHTML data).
+ * - Frontend hanya untuk UX. Semua pengesahan sebenar berlaku di backend.
+ * - Tiada data peribadi disimpan dalam localStorage. Satu-satunya nilai yang disimpan
+ *   ialah penanda peranti rawak (bukan data peribadi) untuk elak kehadiran ahli berganda.
+ */
+(function () {
+  'use strict';
+
+  var S = {
+    t: '', k: '', s: '',
+    cfg: null,          // daripada apiMula
+    emel: '',
+    profil: null,       // profil sementara (memori sahaja) untuk aliran maklum balas
+    mod: 'EMEL'         // maklum balas: 'EMEL' atau 'AHLI'
+  };
+  var app = document.getElementById('app');
+
+  var IKON = {
+    betul: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+    hati: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.1 5.3 3 1.7-1.9 3.2-3 5.3-3 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg>',
+    amaran: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><path d="M12 16.5h.01"/></svg>'
+  };
+
+  // -------------------------------------------------------------------------
+  // Pembantu DOM (selamat XSS)
+  // -------------------------------------------------------------------------
+
+  /** h('div', {class:'x', text:'...', attrs:{...}, on:{click:fn}}, [anak...]) */
+  function h(tag, props, anak) {
+    var el = document.createElement(tag);
+    props = props || {};
+    if (props['class']) el.className = props['class'];
+    if (props.text !== undefined && props.text !== null) el.textContent = String(props.text);
+    if (props.attrs) {
+      Object.keys(props.attrs).forEach(function (k) {
+        var v = props.attrs[k];
+        if (v === false || v === null || v === undefined) return;
+        el.setAttribute(k, v === true ? '' : String(v));
+      });
+    }
+    if (props.on) Object.keys(props.on).forEach(function (k) { el.addEventListener(k, props.on[k]); });
+    (anak || []).forEach(function (c) {
+      if (c === null || c === undefined || c === false) return;
+      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return el;
+  }
+
+  /** Ikon SVG statik (rentetan tetap dalam kod — bukan data). */
+  function ikon(nama, kelas) {
+    var d = h('div', { 'class': 'ikon-besar' + (kelas ? ' ' + kelas : ''), attrs: { 'aria-hidden': 'true' } });
+    d.innerHTML = IKON[nama];
+    return d;
+  }
+
+  function papar() {
+    while (app.firstChild) app.removeChild(app.firstChild);
+    for (var i = 0; i < arguments.length; i++) if (arguments[i]) app.appendChild(arguments[i]);
+    window.scrollTo(0, 0);
+  }
+
+  function setSubjudul(teks) { document.getElementById('subjudul').textContent = teks; }
+
+  function kotakRalat() { return h('div', { 'class': 'kotak-ralat', attrs: { role: 'alert' } }); }
+  function tunjukRalat(kotak, mesej) {
+    kotak.textContent = mesej;
+    kotak.classList.add('tunjuk');
+    kotak.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function sorokRalat(kotak) { kotak.textContent = ''; kotak.classList.remove('tunjuk'); }
+
+  function butang(teks, opt) {
+    opt = opt || {};
+    var b = h('button', { 'class': 'btn' + (opt.kelas ? ' ' + opt.kelas : ''), attrs: { type: opt.type || 'button' } });
+    var label = h('span', { text: teks });
+    b.appendChild(label);
+    if (opt.kecil) b.appendChild(h('small', { text: opt.kecil }));
+    if (opt.klik) b.addEventListener('click', opt.klik);
+    b._label = label;
+    b._teks = teks;
+    return b;
+  }
+
+  function sibuk(btn, ya) {
+    if (!btn) return;
+    btn.disabled = !!ya;
+    if (ya) {
+      btn._label.textContent = 'Sila tunggu…';
+      if (!btn._putar) { btn._putar = h('span', { 'class': 'pemutar-kecil', attrs: { 'aria-hidden': 'true' } }); btn.insertBefore(btn._putar, btn.firstChild); }
+    } else {
+      btn._label.textContent = btn._teks;
+      if (btn._putar) { btn.removeChild(btn._putar); btn._putar = null; }
+    }
+  }
+
+  /** Panggil fungsi backend → Promise (res seragam). */
+  /**
+   * Mod halaman:
+   *  - STATIK: halaman dihoskan di luar script.google.com (contoh GitHub Pages).
+   *    URL /exec dibaca daripada <meta name="borang-api">. Data dihantar dengan
+   *    fetch TANPA kuki supaya akaun Google peserta tidak terlibat (elak /u/1).
+   *  - APPS SCRIPT: halaman dibuka terus dari /exec (QR lama) → google.script.run.
+   */
+  var API_STATIK = (function () {
+    var m = document.querySelector('meta[name="borang-api"]');
+    var u = m ? String(m.getAttribute('content') || '').trim() : '';
+    return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(u) ? u : '';
+  })();
+  var MOD_STATIK = !(window.google && google.script && google.script.run);
+
+  // Halaman statik tidak boleh dibenam dalam laman lain (perlindungan clickjacking,
+  // kerana GitHub Pages tidak membenarkan pengepala frame-ancestors).
+  if (MOD_STATIK && window.top !== window.self) {
+    document.body.textContent = '';
+    return;
+  }
+
+  var RALAT_SISTEM = { status: 'error', code: 'SYSTEM', message: 'Maaf, berlaku ralat. Sila cuba semula.' };
+  var RALAT_RANGKAIAN = { status: 'error', code: 'RANGKAIAN', message: 'Sambungan terputus. Sila semak internet anda dan cuba semula.' };
+
+  function panggil(fn, payload) {
+    if (MOD_STATIK) return panggilStatik(fn, payload);
+    return new Promise(function (lulus) {
+      google.script.run
+        .withSuccessHandler(function (res) {
+          lulus(res && res.status ? res : { status: 'error', code: 'SYSTEM', message: 'Maaf, berlaku ralat. Sila cuba semula.' });
+        })
+        .withFailureHandler(function () {
+          lulus({ status: 'error', code: 'RANGKAIAN', message: 'Sambungan terputus. Sila semak internet anda dan cuba semula.' });
+        })[fn](payload);
+    });
+  }
+
+  function panggilStatik(fn, payload) {
+    if (!API_STATIK) return Promise.resolve({ status: 'error', code: 'TIDAK_SAH', message: 'Borang ini belum dikonfigurasi. Sila hubungi penganjur program.' });
+    var kawal = ('AbortController' in window) ? new AbortController() : null;
+    var tamat = kawal ? setTimeout(function () { kawal.abort(); }, 45000) : null;
+    return fetch(API_STATIK, {
+      method: 'POST',
+      mode: 'cors',
+      credentials: 'omit',          // PENTING: tiada kuki Google → tiada masalah /u/1
+      redirect: 'follow',
+      cache: 'no-store',
+      referrerPolicy: 'no-referrer',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // elak CORS preflight
+      body: JSON.stringify({ fn: fn, input: payload || {} }),
+      signal: kawal ? kawal.signal : undefined
+    }).then(function (r) {
+      if (!r.ok) return RALAT_SISTEM;
+      return r.json().then(function (res) { return (res && res.status) ? res : RALAT_SISTEM; }, function () { return RALAT_SISTEM; });
+    }, function () {
+      return RALAT_RANGKAIAN;
+    }).then(function (res) {
+      if (tamat) clearTimeout(tamat);
+      return res;
+    });
+  }
+
+  /** Parameter URL (t, k, s) bagi kedua-dua mod. */
+  function bacaParameter(cb) {
+    if (!MOD_STATIK) {
+      return google.script.url.getLocation(function (loc) { cb((loc && loc.parameter) || {}); });
+    }
+    var p = {};
+    try {
+      var q = new URLSearchParams(window.location.search);
+      ['t', 'k', 's'].forEach(function (n) { if (q.has(n)) p[n] = q.get(n); });
+    } catch (e) { /* abaikan */ }
+    cb(p);
+  }
+
+  /** Kendalikan ralat: pautan tidak sah → skrin penuh; lain-lain → kotak ralat. */
+  function urusRalat(res, kotak) {
+    if (res.code === 'TIDAK_SAH') return skrinRalat(res.message);
+    tunjukRalat(kotak, res.message || 'Maaf, berlaku ralat.');
+  }
+
+  function peranti() {
+    try {
+      var k = 'jpm_peranti';
+      var v = window.localStorage.getItem(k);
+      if (!v || !/^[a-f0-9]{32}$/.test(v)) {
+        var a = new Uint8Array(16);
+        window.crypto.getRandomValues(a);
+        v = Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+        window.localStorage.setItem(k, v);
+      }
+      return v;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function emelSah(v) {
+    return v.length <= 254 && /^[^\s@<>"'`,;]+@[^\s@<>"'`,;]+\.[a-zA-Z]{2,}$/.test(v);
+  }
+
+  function perangkap() {
+    // Medan honeypot: manusia tidak nampak; bot yang mengisi semua medan akan diabaikan backend.
+    var w = h('div', { 'class': 'perangkap', attrs: { 'aria-hidden': 'true' } }, [
+      h('label', { text: 'Laman web', attrs: { 'for': 'laman' } }),
+      h('input', { attrs: { type: 'text', id: 'laman', name: 'laman', tabindex: '-1', autocomplete: 'off' } })
+    ]);
+    return w;
+  }
+  function nilaiPerangkap() { var e = document.getElementById('laman'); return e ? e.value : ''; }
+
+  // -------------------------------------------------------------------------
+  // Komponen
+  // -------------------------------------------------------------------------
+
+  function kadSesi() {
+    if (!S.cfg || !S.cfg.sesi) return null;
+    var x = S.cfg.sesi;
+    return h('section', { 'class': 'kad info-sesi' }, [
+      h('div', { 'class': 'label', text: ({ checkin: 'Daftar kehadiran', pradaftar: 'Pendaftaran awal program', maklumbalas: 'Maklum balas program' })[S.t] || '' }),
+      h('div', { 'class': 'program', text: x.program }),
+      h('p', { 'class': 'sesi', text: x.sesi }),
+      (x.tarikh || x.masa) ? h('div', { 'class': 'masa', text: [x.tarikh, x.masa].filter(Boolean).join(' · ') }) : null
+    ]);
+  }
+
+  function medan(labelTeks, input, opt) {
+    opt = opt || {};
+    var lbl = h('label', { attrs: { 'for': input.id } }, [labelTeks]);
+    if (opt.wajib) lbl.appendChild(h('span', { 'class': 'wajib', text: '*', attrs: { 'aria-hidden': 'true' } }));
+    if (opt.pilihan) lbl.appendChild(h('span', { 'class': 'pilihan-teg', text: ' (pilihan)' }));
+    var w = h('div', { 'class': 'medan' }, [lbl, input]);
+    if (opt.bantuan) w.appendChild(h('div', { 'class': 'bantuan', text: opt.bantuan }));
+    w.appendChild(h('div', { 'class': 'mesej-medan', text: opt.mesej || 'Medan ini wajib diisi.' }));
+    if (opt.wajib) input.setAttribute('aria-required', 'true');
+    return w;
+  }
+
+  function pilihanSelect(id, senarai, nilai) {
+    var sel = h('select', { attrs: { id: id, name: id } }, [h('option', { text: '— Pilih —', attrs: { value: '' } })]);
+    (senarai || []).forEach(function (p) {
+      var o = h('option', { text: p.label, attrs: { value: p.kod } });
+      if (nilai && nilai === p.kod) o.selected = true;
+      sel.appendChild(o);
+    });
+    return sel;
+  }
+
+  function tandaSalah(w, ya, mesej) {
+    if (!w) return;
+    w.classList.toggle('salah', !!ya);
+    if (mesej) { var m = w.querySelector('.mesej-medan'); if (m) m.textContent = mesej; }
+  }
+
+  // -------------------------------------------------------------------------
+  // Skrin umum
+  // -------------------------------------------------------------------------
+
+  function skrinRalat(mesej) {
+    setSubjudul('Borang Awam');
+    papar(h('section', { 'class': 'kad tengah' }, [
+      ikon('amaran', 'ralat'),
+      h('h1', { text: 'Borang tidak dapat dibuka' }),
+      h('p', { 'class': 'redup', text: mesej || 'Pautan ini tidak sah atau tidak aktif pada masa ini.' }),
+      h('p', { 'class': 'redup kecil', text: 'Jika anda mengimbas kod QR, pastikan kod itu untuk sesi yang betul atau minta pautan baharu daripada penganjur.' })
+    ]));
+  }
+
+  function skrinSelesai(tajuk, mesej, tambahan, jenisIkon) {
+    var anak = [ikon(jenisIkon || 'betul'), h('h1', { text: tajuk })];
+    (Array.isArray(mesej) ? mesej : [mesej]).forEach(function (m) { if (m) anak.push(h('p', { text: m })); });
+    if (tambahan) anak.push(h('p', { 'class': 'redup kecil', text: tambahan }));
+    papar(kadSesi(), h('section', { 'class': 'kad tengah' }, anak));
+  }
+
+  function skrinPilihStatus(opt) {
+    papar(
+      kadSesi(),
+      h('section', { 'class': 'kad' }, [
+        h('h1', { text: opt.tajuk }),
+        opt.pengenalan ? h('p', { 'class': 'redup', text: opt.pengenalan }) : null,
+        butang('Saya bukan Ahli IKRAM', { kecil: opt.kecilBukan, klik: opt.bukanAhli, kelas: 'btn-pilihan' }),
+        butang('Saya Ahli IKRAM', { kecil: opt.kecilAhli, klik: opt.ahli, kelas: 'btn-garis btn-pilihan' })
+      ])
+    );
+  }
+
+  /** Langkah emel. onHantar(emel, btn, kotak) */
+  function skrinEmel(opt) {
+    var kotak = kotakRalat();
+    var inp = h('input', { attrs: { type: 'email', id: 'emel', name: 'emel', autocomplete: 'email', inputmode: 'email', maxlength: '254', autocapitalize: 'off', spellcheck: 'false' } });
+    inp.value = S.emel || '';
+    var w = medan('Alamat emel', inp, { wajib: true, bantuan: opt.bantuan, mesej: 'Sila masukkan alamat emel yang sah.' });
+    var btn = butang('Teruskan', { type: 'submit' });
+    var form = h('form', { attrs: { novalidate: true } }, [
+      h('div', { 'class': 'langkah', text: opt.langkah || 'Langkah 1' }),
+      h('h1', { text: opt.tajuk }),
+      opt.pengenalan ? h('p', { 'class': 'redup', text: opt.pengenalan }) : null,
+      w, perangkap(), kotak, btn
+    ]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      sorokRalat(kotak);
+      var v = inp.value.trim().toLowerCase();
+      if (!emelSah(v)) { tandaSalah(w, true); inp.focus(); return; }
+      tandaSalah(w, false);
+      S.emel = v;
+      opt.onHantar(v, btn, kotak);
+    });
+    papar(kadSesi(), h('section', { 'class': 'kad' }, [form, opt.kembali ? butang('Kembali', { kelas: 'btn-pautan', klik: opt.kembali }) : null]));
+    setTimeout(function () { inp.focus(); }, 50);
+  }
+
+  /**
+   * Borang profil (individu baharu).
+   * opt: { tajuk, pengenalan, langkah, minatIkram:bool, butangLabel, onHantar(profil, minat, btn, kotak), kembali }
+   */
+  function skrinProfil(opt) {
+    var cfg = S.cfg;
+    var p = cfg.pilihan;
+    var d = S.profil || {};
+    var kotak = kotakRalat();
+
+    var nama = h('input', { attrs: { type: 'text', id: 'nama', autocomplete: 'name', maxlength: '100', autocapitalize: 'words' } });
+    nama.value = d.nama || '';
+    var tel = h('input', { attrs: { type: 'tel', id: 'telefon', autocomplete: 'tel', inputmode: 'tel', maxlength: '20' } });
+    tel.value = d.telefon || '';
+    var negeri = pilihanSelect('negeri_tinggal', p.negeri_tinggal, d.negeri_tinggal);
+    var umur = pilihanSelect('julat_umur', p.julat_umur, d.julat_umur);
+    var bangsa = pilihanSelect('bangsa', p.bangsa, d.bangsa);
+    var kerja = pilihanSelect('pekerjaan', p.pekerjaan, d.pekerjaan);
+    var didik = pilihanSelect('pendidikan', p.pendidikan, d.pendidikan);
+
+    var jantinaSeg = h('div', { 'class': 'segmen', attrs: { role: 'radiogroup', 'aria-label': 'Jantina', 'aria-required': 'true' } });
+    (p.jantina || []).forEach(function (j) {
+      var r = h('input', { attrs: { type: 'radio', name: 'jantina', value: j.kod } });
+      if (d.jantina === j.kod) r.checked = true;
+      jantinaSeg.appendChild(h('label', { 'class': 'pil' }, [r, h('span', { text: j.label })]));
+    });
+
+    var wNama = medan('Nama penuh', nama, { wajib: true });
+    var wTel = medan('No. telefon', tel, { pilihan: true, bantuan: 'Contoh: 0123456789', mesej: 'No. telefon tidak sah.' });
+    var wNegeri = medan('Negeri tempat tinggal', negeri, { wajib: true, mesej: 'Sila pilih negeri tempat tinggal.' });
+    var wUmur = medan('Julat umur', umur, { wajib: true, mesej: 'Sila pilih julat umur.' });
+    var wJantina = h('div', { 'class': 'medan' }, [
+      h('div', { 'class': 'tajuk-medan' }, ['Jantina', h('span', { 'class': 'wajib', text: '*', attrs: { 'aria-hidden': 'true' } })]),
+      jantinaSeg,
+      h('div', { 'class': 'mesej-medan', text: 'Sila pilih jantina.' })
+    ]);
+
+    // Notis PDPA + persetujuan
+    var notis = h('div', { 'class': 'notis', text: cfg.pdpa.teks, attrs: { tabindex: '0', role: 'region', 'aria-label': 'Notis privasi' } });
+    var cbPdpa = h('input', { attrs: { type: 'checkbox', id: 'pdpa' } });
+    cbPdpa.checked = !!d.persetujuan_pdpa;
+    var lPdpa = h('label', { 'class': 'setuju', attrs: { 'for': 'pdpa' } }, [cbPdpa,
+      h('span', { text: 'Saya telah membaca notis privasi di atas dan bersetuju maklumat saya diproses bagi tujuan yang dinyatakan.' })]);
+    var wPdpa = h('div', { 'class': 'medan' }, [
+      h('div', { 'class': 'tajuk-medan', text: 'Notis privasi (PDPA)' }),
+      notis,
+      h('div', { 'class': 'versi-notis', text: 'Versi notis: ' + cfg.pdpa.versi }),
+      lPdpa,
+      h('div', { 'class': 'mesej-medan', text: 'Persetujuan diperlukan untuk meneruskan.' })
+    ]);
+
+    var cbPenjaga = h('input', { attrs: { type: 'checkbox', id: 'penjaga' } });
+    cbPenjaga.checked = !!d.persetujuan_penjaga;
+    var wPenjaga = h('div', { 'class': 'medan' }, [
+      h('label', { 'class': 'setuju amaran', attrs: { 'for': 'penjaga' } }, [cbPenjaga,
+        h('span', { text: 'Saya berumur 18 tahun dan ke bawah, dan ibu bapa/penjaga saya telah bersetuju saya berkongsi maklumat ini.' })]),
+      h('div', { 'class': 'mesej-medan', text: 'Persetujuan ibu bapa/penjaga diperlukan.' })
+    ]);
+    function kemasPenjaga() {
+      var perlu = (cfg.penjaga || []).indexOf(umur.value) !== -1;
+      wPenjaga.style.display = perlu ? '' : 'none';
+      if (!perlu) cbPenjaga.checked = false;
+    }
+    umur.addEventListener('change', kemasPenjaga);
+    kemasPenjaga();
+
+    var cbMinat = null;
+    var wMinat = null;
+    if (opt.minatIkram) {
+      cbMinat = h('input', { attrs: { type: 'checkbox', id: 'minat_ikram' } });
+      wMinat = h('label', { 'class': 'setuju', attrs: { 'for': 'minat_ikram' } }, [cbMinat,
+        h('span', { text: 'Saya berminat untuk mengenali dan menyertai IKRAM dengan lebih dekat.' })]);
+    }
+
+    var tambahan = h('details', { 'class': 'tambahan' }, [
+      h('summary', { text: 'Maklumat tambahan (pilihan)' }),
+      medan('Bangsa', bangsa, { pilihan: true }),
+      medan('Pekerjaan', kerja, { pilihan: true }),
+      medan('Tahap pendidikan', didik, { pilihan: true })
+    ]);
+    if (d.bangsa || d.pekerjaan || d.pendidikan) tambahan.open = true;
+
+    var btn = butang(opt.butangLabel || 'Hantar', { type: 'submit' });
+    var form = h('form', { attrs: { novalidate: true } }, [
+      h('div', { 'class': 'langkah', text: opt.langkah || 'Langkah 2' }),
+      h('h1', { text: opt.tajuk || 'Maklumat diri' }),
+      h('p', { 'class': 'redup', text: opt.pengenalan || 'Sila lengkapkan maklumat di bawah. Medan bertanda * wajib diisi.' }),
+      h('div', { 'class': 'medan' }, [h('div', { 'class': 'tajuk-medan', text: 'Emel' }), h('div', { 'class': 'redup', text: S.emel })]),
+      wNama, wTel, wNegeri, wJantina, wUmur, tambahan, wMinat, wPdpa, wPenjaga,
+      perangkap(), kotak, btn
+    ]);
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      sorokRalat(kotak);
+      var jantinaPilih = form.querySelector('input[name=jantina]:checked');
+      var profil = {
+        nama: nama.value.trim(),
+        telefon: tel.value.trim(),
+        negeri_tinggal: negeri.value,
+        julat_umur: umur.value,
+        jantina: jantinaPilih ? jantinaPilih.value : '',
+        bangsa: bangsa.value,
+        pekerjaan: kerja.value,
+        pendidikan: didik.value,
+        persetujuan_pdpa: cbPdpa.checked,
+        persetujuan_penjaga: cbPenjaga.checked
+      };
+      var telBersih = profil.telefon.replace(/[\s\-().]/g, '');
+      var semak = [
+        [wNama, !profil.nama],
+        [wTel, telBersih && !/^\+?\d{9,15}$/.test(telBersih)],
+        [wNegeri, !profil.negeri_tinggal],
+        [wJantina, !profil.jantina],
+        [wUmur, !profil.julat_umur],
+        [wPdpa, !profil.persetujuan_pdpa],
+        [wPenjaga, wPenjaga.style.display !== 'none' && !profil.persetujuan_penjaga]
+      ];
+      var pertama = null;
+      semak.forEach(function (x) { tandaSalah(x[0], x[1]); if (x[1] && !pertama) pertama = x[0]; });
+      if (pertama) { pertama.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      S.profil = profil;
+      opt.onHantar(profil, cbMinat ? cbMinat.checked : false, btn, kotak);
+    });
+
+    papar(kadSesi(), h('section', { 'class': 'kad' }, [form, opt.kembali ? butang('Kembali', { kelas: 'btn-pautan', klik: opt.kembali }) : null]));
+  }
+
+  // -------------------------------------------------------------------------
+  // A) Daftar Lead
+  // -------------------------------------------------------------------------
+
+  function mulaDaftar() {
+    setSubjudul('Daftar Minat');
+    skrinPilihStatus({
+      tajuk: 'Selamat datang!',
+      pengenalan: 'Daftar untuk menerima maklumat program dan aktiviti IKRAM yang sesuai dengan anda. Ia mengambil masa kurang dua minit.',
+      kecilBukan: 'Teruskan pendaftaran',
+      kecilAhli: 'Saya sudah berdaftar sebagai ahli',
+      bukanAhli: daftarEmel,
+      ahli: function () {
+        skrinSelesai('Terima kasih, Ahli IKRAM!', [
+          'Terima kasih kerana telah menjadi Ahli IKRAM. Selamat berjuang bersama!',
+          'Semoga Allah memberkati setiap usaha dan sumbangan kita untuk masyarakat.'
+        ], 'Halaman ini khusus untuk orang awam yang ingin mengenali IKRAM, jadi tiada maklumat anda direkodkan di sini.', 'hati');
+        app.lastChild.appendChild(butang('Kembali', { kelas: 'btn-pautan', klik: mulaDaftar }));
+      }
+    });
+  }
+
+  function daftarEmel() {
+    skrinEmel({
+      tajuk: 'Masukkan emel anda',
+      pengenalan: 'Kami gunakan emel untuk mengenal pasti pendaftaran anda.',
+      kembali: mulaDaftar,
+      onHantar: function (emel, btn, kotak) {
+        sibuk(btn, true);
+        panggil('apiDaftarEmel', { s: S.s, emel: emel, laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          if (res.data.langkah === 'PROFIL') return daftarProfil();
+          daftarSelesai();
+        });
+      }
+    });
+  }
+
+  function daftarProfil() {
+    skrinProfil({
+      tajuk: 'Maklumat diri',
+      minatIkram: true,
+      butangLabel: 'Hantar pendaftaran',
+      kembali: daftarEmel,
+      onHantar: function (profil, minat, btn, kotak) {
+        sibuk(btn, true);
+        panggil('apiDaftarProfil', { s: S.s, emel: S.emel, profil: profil, minat_ikram: minat, laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          S.profil = null;
+          daftarSelesai();
+        });
+      }
+    });
+  }
+
+  function daftarSelesai() {
+    skrinSelesai('Pendaftaran diterima', [
+      'Terima kasih! Pendaftaran anda telah kami terima.',
+      'Kami akan berkongsi maklumat program dan aktiviti IKRAM yang sesuai dengan anda.'
+    ]);
+  }
+
+  // -------------------------------------------------------------------------
+  // A2) Pra-daftar program
+  // -------------------------------------------------------------------------
+
+  var NOTA_HARI_PROGRAM = 'Pada hari program, sila imbas kod QR check-in di lokasi untuk merekod kehadiran anda.';
+
+  function mulaPradaftar() {
+    setSubjudul('Pendaftaran Awal');
+    skrinPilihStatus({
+      tajuk: 'Daftar awal untuk program ini',
+      pengenalan: 'Tempah tempat anda sekarang. Ia mengambil masa kurang dua minit.',
+      kecilBukan: 'Masukkan emel untuk mendaftar',
+      kecilAhli: 'Daftar tanpa maklumat peribadi',
+      bukanAhli: pradaftarEmel,
+      ahli: pradaftarAhliSahkan
+    });
+  }
+
+  function pradaftarAhliSahkan() {
+    var kotak = kotakRalat();
+    var btn = butang('Ya, saya akan hadir', {
+      klik: function () {
+        sorokRalat(kotak);
+        sibuk(btn, true);
+        panggil('apiPradaftarAhli', { k: S.k, s: S.s, peranti: peranti(), laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          skrinSelesai('Terima kasih, Ahli IKRAM!', [
+            'Terima kasih kerana telah menjadi Ahli IKRAM dan terus menyokong program ini. Selamat berjuang bersama!',
+            NOTA_HARI_PROGRAM
+          ], 'Tiada maklumat peribadi anda direkodkan. Kami hanya mengira jumlah ahli yang dijangka hadir.', 'hati');
+        });
+      }
+    });
+    papar(kadSesi(), h('section', { 'class': 'kad' }, [
+      h('h1', { text: 'Sahkan pendaftaran sebagai Ahli IKRAM' }),
+      h('p', { 'class': 'redup', text: 'Kami hanya mengira jumlah ahli yang akan hadir supaya persiapan program mencukupi. Tiada nama atau emel diperlukan.' }),
+      perangkap(), kotak, btn,
+      butang('Kembali', { kelas: 'btn-pautan', klik: mulaPradaftar })
+    ]));
+  }
+
+  function pradaftarEmel() {
+    skrinEmel({
+      tajuk: 'Masukkan emel anda',
+      pengenalan: 'Peringatan program akan dihantar ke emel ini.',
+      kembali: mulaPradaftar,
+      onHantar: function (emel, btn, kotak) {
+        sibuk(btn, true);
+        panggil('apiPradaftarEmel', { k: S.k, s: S.s, emel: emel, laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          if (res.data.langkah === 'PROFIL') return pradaftarProfil();
+          pradaftarSelesai(res.data.semula);
+        });
+      }
+    });
+  }
+
+  function pradaftarProfil() {
+    skrinProfil({
+      tajuk: 'Maklumat diri',
+      pengenalan: 'Ini kali pertama emel ini digunakan. Sila isi maklumat ringkas di bawah. Medan bertanda * wajib diisi.',
+      minatIkram: true,
+      butangLabel: 'Hantar pendaftaran',
+      kembali: pradaftarEmel,
+      onHantar: function (profil, minat, btn, kotak) {
+        sibuk(btn, true);
+        panggil('apiPradaftarProfil', { k: S.k, s: S.s, emel: S.emel, profil: profil, minat_ikram: minat, laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          S.profil = null;
+          pradaftarSelesai(res.data.semula);
+        });
+      }
+    });
+  }
+
+  function pradaftarSelesai(semula) {
+    if (semula) {
+      return skrinSelesai('Selamat kembali!', [
+        'Terima kasih kerana sudi bersama IKRAM sekali lagi! Pendaftaran anda untuk program ini telah kami terima.',
+        'Peringatan akan dihantar ke emel anda sebelum program. Jumpa anda nanti!'
+      ], NOTA_HARI_PROGRAM, 'hati');
+    }
+    skrinSelesai('Pendaftaran diterima', [
+      'Terima kasih! Pendaftaran awal anda untuk program ini telah kami terima.',
+      'Peringatan akan dihantar ke emel anda sebelum program. Jumpa anda nanti!'
+    ], NOTA_HARI_PROGRAM);
+  }
+
+  // -------------------------------------------------------------------------
+  // B) Check-in
+  // -------------------------------------------------------------------------
+
+  function mulaCheckin() {
+    setSubjudul('Daftar Kehadiran');
+    skrinPilihStatus({
+      tajuk: 'Rekod kehadiran anda',
+      pengenalan: 'Sila pilih status anda.',
+      kecilBukan: 'Masukkan emel untuk merekod kehadiran',
+      kecilAhli: 'Rekod kehadiran tanpa maklumat peribadi',
+      bukanAhli: checkinEmel,
+      ahli: checkinAhliSahkan
+    });
+  }
+
+  function checkinAhliSahkan() {
+    var kotak = kotakRalat();
+    var btn = butang('Ya, rekod kehadiran saya', {
+      klik: function () {
+        sorokRalat(kotak);
+        sibuk(btn, true);
+        panggil('apiCheckinAhli', { k: S.k, peranti: peranti(), laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          skrinSelesai('Kehadiran direkodkan', [
+            'Terima kasih kerana hadir dan menyokong program ini sebagai Ahli IKRAM.',
+            'Selamat berjuang bersama!'
+          ], 'Tiada maklumat peribadi anda direkodkan untuk kehadiran ini.', 'hati');
+        });
+      }
+    });
+    papar(kadSesi(), h('section', { 'class': 'kad' }, [
+      h('h1', { text: 'Sahkan kehadiran sebagai Ahli IKRAM' }),
+      h('p', { 'class': 'redup', text: 'Kehadiran anda akan dikira sebagai kehadiran Ahli IKRAM. Tiada nama atau emel diperlukan.' }),
+      perangkap(), kotak, btn,
+      butang('Kembali', { kelas: 'btn-pautan', klik: mulaCheckin })
+    ]));
+  }
+
+  function checkinEmel() {
+    skrinEmel({
+      tajuk: 'Masukkan emel anda',
+      pengenalan: 'Jika anda pernah berdaftar, kehadiran anda akan terus direkodkan.',
+      kembali: mulaCheckin,
+      onHantar: function (emel, btn, kotak) {
+        sibuk(btn, true);
+        panggil('apiCheckinEmel', { k: S.k, emel: emel, laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          if (res.data.langkah === 'PROFIL') return checkinProfil();
+          checkinSelesai();
+        });
+      }
+    });
+  }
+
+  function checkinProfil() {
+    skrinProfil({
+      tajuk: 'Daftar kali pertama',
+      pengenalan: 'Ini kali pertama emel ini digunakan. Sila isi maklumat ringkas di bawah. Medan bertanda * wajib diisi.',
+      butangLabel: 'Rekod kehadiran',
+      kembali: checkinEmel,
+      onHantar: function (profil, minat, btn, kotak) {
+        sibuk(btn, true);
+        panggil('apiCheckinProfil', { k: S.k, emel: S.emel, profil: profil, laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          S.profil = null;
+          checkinSelesai();
+        });
+      }
+    });
+  }
+
+  function checkinSelesai() {
+    skrinSelesai('Kehadiran direkodkan', [
+      'Terima kasih! Kehadiran anda bagi sesi ini telah direkodkan.',
+      'Selamat mengikuti program.'
+    ], 'Selepas sesi, imbas kod QR maklum balas untuk berkongsi pandangan anda.');
+  }
+
+  // -------------------------------------------------------------------------
+  // C) Maklum balas
+  // -------------------------------------------------------------------------
+
+  function mulaMaklumBalas() {
+    setSubjudul('Maklum Balas Program');
+    skrinPilihStatus({
+      tajuk: 'Kongsi maklum balas anda',
+      pengenalan: 'Maklum balas anda membantu kami menambah baik program akan datang.',
+      kecilBukan: 'Masukkan emel untuk bermula',
+      kecilAhli: 'Jawab tanpa maklumat peribadi',
+      bukanAhli: function () { S.mod = 'EMEL'; mbEmel(); },
+      ahli: function () { S.mod = 'AHLI'; S.profil = null; skrinSoalan(); }
+    });
+  }
+
+  function mbEmel() {
+    skrinEmel({
+      tajuk: 'Masukkan emel anda',
+      pengenalan: 'Emel digunakan supaya setiap peserta menjawab sekali bagi setiap sesi.',
+      kembali: mulaMaklumBalas,
+      onHantar: function (emel, btn, kotak) {
+        sibuk(btn, true);
+        panggil('apiMaklumBalasEmel', { k: S.k, emel: emel, laman: nilaiPerangkap() }).then(function (res) {
+          sibuk(btn, false);
+          if (res.status !== 'ok') return urusRalat(res, kotak);
+          if (res.data.langkah === 'SUDAH') return mbSudah();
+          if (res.data.langkah === 'PROFIL') return mbProfil();
+          S.profil = null;
+          skrinSoalan();
+        });
+      }
+    });
+  }
+
+  function mbProfil() {
+    skrinProfil({
+      tajuk: 'Maklumat diri',
+      pengenalan: 'Ini kali pertama emel ini digunakan. Sila isi maklumat ringkas sebelum menjawab soalan.',
+      langkah: 'Langkah 2',
+      butangLabel: 'Teruskan ke soalan',
+      kembali: mbEmel,
+      onHantar: function () { skrinSoalan(); } // profil disimpan dalam memori; dihantar bersama jawapan
+    });
+  }
+
+  function mbSudah() {
+    skrinSelesai('Maklum balas telah diterima', 'Maklum balas anda bagi sesi ini telah pun kami terima. Terima kasih!');
+  }
+
+  function mbSelesai() {
+    skrinSelesai('Terima kasih!', [
+      'Maklum balas anda telah kami terima.',
+      'Pandangan anda membantu kami menambah baik program akan datang.'
+    ]);
+  }
+
+  function binaSoalan(q, no) {
+    var fs = h('fieldset', { 'class': 'soalan', attrs: { id: 'q_' + q.id } });
+    var lg = h('legend', null, [h('span', { 'class': 'no-soalan', text: no + '.' }), q.teks]);
+    if (q.wajib) lg.appendChild(h('span', { 'class': 'wajib', text: '*', attrs: { 'aria-hidden': 'true' } }));
+    fs.appendChild(lg);
+
+    function skala(nama) {
+      var seg = h('div', { 'class': 'segmen skala', attrs: { role: 'radiogroup' } });
+      for (var n = 1; n <= 5; n++) {
+        seg.appendChild(h('label', { 'class': 'pil' }, [
+          h('input', { attrs: { type: 'radio', name: nama, value: String(n), 'aria-label': String(n) } }),
+          h('span', { text: String(n) })
+        ]));
+      }
+      return seg;
+    }
+    function hujung() {
+      return h('div', { 'class': 'hujung-skala' }, [h('span', { text: '1 = Sangat rendah' }), h('span', { text: '5 = Sangat tinggi' })]);
+    }
+
+    if (q.jenis === 'SKALA_5') {
+      fs.appendChild(skala(q.id));
+      fs.appendChild(hujung());
+    } else if (q.jenis === 'MATRIKS_SKALA_5') {
+      q.baris.forEach(function (b) {
+        fs.appendChild(h('div', { 'class': 'baris-matriks' }, [
+          h('div', { 'class': 'teks-baris', text: b.teks }),
+          skala(q.id + '__' + b.no)
+        ]));
+      });
+      fs.appendChild(hujung());
+    } else if (q.jenis === 'PILIHAN' || q.jenis === 'PILIHAN_BERBILANG') {
+      var jenisInput = q.jenis === 'PILIHAN' ? 'radio' : 'checkbox';
+      var senarai = h('div', { 'class': 'senarai-pil' });
+      q.pilihan.forEach(function (p) {
+        senarai.appendChild(h('label', { 'class': 'baris-pil' }, [
+          h('input', { attrs: { type: jenisInput, name: q.id, value: p.kod } }),
+          h('span', { text: p.label })
+        ]));
+      });
+      fs.appendChild(senarai);
+    } else if (q.jenis === 'TEKS_PANJANG') {
+      var ta = h('textarea', { attrs: { name: q.id, maxlength: '1000', rows: '4', 'aria-label': q.teks } });
+      var kira = h('div', { 'class': 'kiraan', text: '0 / 1000' });
+      ta.addEventListener('input', function () { kira.textContent = ta.value.length + ' / 1000'; });
+      fs.appendChild(ta);
+      fs.appendChild(kira);
+    } else if (q.jenis === 'YA_TIDAK') {
+      fs.appendChild(h('div', { 'class': 'segmen' }, [
+        h('label', { 'class': 'pil' }, [h('input', { attrs: { type: 'radio', name: q.id, value: 'YA' } }), h('span', { text: 'Ya' })]),
+        h('label', { 'class': 'pil' }, [h('input', { attrs: { type: 'radio', name: q.id, value: 'TIDAK' } }), h('span', { text: 'Tidak' })])
+      ]));
+    }
+    fs.appendChild(h('div', { 'class': 'mesej-medan', text: q.jenis === 'MATRIKS_SKALA_5' ? 'Sila jawab semua baris.' : 'Soalan ini wajib dijawab.' }));
+    return fs;
+  }
+
+  /** Kumpul jawapan satu soalan. Pulang { nilai, lengkap } */
+  function kumpul(form, q) {
+    function pilih(nama) { var x = form.querySelector('input[name="' + nama + '"]:checked'); return x ? x.value : ''; }
+    if (q.jenis === 'SKALA_5') { var v = pilih(q.id); return { nilai: v ? Number(v) : undefined, lengkap: !!v }; }
+    if (q.jenis === 'MATRIKS_SKALA_5') {
+      var o = {}; var bil = 0;
+      q.baris.forEach(function (b) { var x = pilih(q.id + '__' + b.no); if (x) { o[String(b.no)] = Number(x); bil++; } });
+      return { nilai: bil ? o : undefined, lengkap: bil === q.baris.length };
+    }
+    if (q.jenis === 'PILIHAN' || q.jenis === 'YA_TIDAK') { var p = pilih(q.id); return { nilai: p || undefined, lengkap: !!p }; }
+    if (q.jenis === 'PILIHAN_BERBILANG') {
+      var arr = Array.prototype.map.call(form.querySelectorAll('input[name="' + q.id + '"]:checked'), function (x) { return x.value; });
+      return { nilai: arr.length ? arr : undefined, lengkap: arr.length > 0 };
+    }
+    if (q.jenis === 'TEKS_PANJANG') {
+      var t = form.querySelector('textarea[name="' + q.id + '"]').value.trim();
+      return { nilai: t || undefined, lengkap: !!t };
+    }
+    return { nilai: undefined, lengkap: false };
+  }
+
+  function skrinSoalan() {
+    var soalan = (S.cfg.soalan || []).filter(function (q) { return !(S.mod === 'AHLI' && q.bukanAhliSahaja); });
+    var kotak = kotakRalat();
+    var form = h('form', { attrs: { novalidate: true } });
+    form.appendChild(h('div', { 'class': 'langkah', text: S.mod === 'AHLI' ? 'Ahli IKRAM' : 'Langkah terakhir' }));
+    form.appendChild(h('h1', { text: 'Soalan maklum balas' }));
+    form.appendChild(h('p', { 'class': 'redup', text: 'Soalan bertanda * wajib dijawab.' }));
+    soalan.forEach(function (q, i) { form.appendChild(binaSoalan(q, i + 1)); });
+    form.appendChild(perangkap());
+    form.appendChild(kotak);
+    var btn = butang('Hantar maklum balas', { type: 'submit' });
+    form.appendChild(btn);
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      sorokRalat(kotak);
+      var jawapan = {};
+      var pertama = null;
+      soalan.forEach(function (q) {
+        var r = kumpul(form, q);
+        var fs = document.getElementById('q_' + q.id);
+        var salah = q.wajib && !r.lengkap;
+        fs.classList.toggle('salah', salah);
+        if (salah && !pertama) pertama = fs;
+        if (r.nilai !== undefined) jawapan[q.id] = r.nilai;
+      });
+      if (pertama) {
+        tunjukRalat(kotak, 'Masih ada soalan wajib yang belum dijawab.');
+        pertama.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      var payload = { k: S.k, mod: S.mod, jawapan: jawapan, laman: nilaiPerangkap() };
+      if (S.mod === 'AHLI') payload.peranti = peranti();
+      else { payload.emel = S.emel; if (S.profil) payload.profil = S.profil; }
+
+      sibuk(btn, true);
+      panggil('apiMaklumBalasHantar', payload).then(function (res) {
+        sibuk(btn, false);
+        if (res.status !== 'ok') {
+          if (res.code === 'PROFIL') return mbProfil();
+          return urusRalat(res, kotak);
+        }
+        S.profil = null;
+        mbSelesai();
+      });
+    });
+
+    var anak = [form];
+    if (S.mod === 'AHLI') anak.push(butang('Kembali', { kelas: 'btn-pautan', klik: mulaMaklumBalas }));
+    papar(kadSesi(), h('section', { 'class': 'kad' }, anak));
+  }
+
+  // -------------------------------------------------------------------------
+  // Mula
+  // -------------------------------------------------------------------------
+
+  function mula() {
+    bacaParameter(function (p) {
+      S.t = String(p.t || '').toLowerCase();
+      S.k = String(p.k || '');
+      S.s = String(p.s || '');
+      if (['daftar', 'pradaftar', 'checkin', 'maklumbalas'].indexOf(S.t) === -1) return skrinRalat();
+
+      panggil('apiMula', { t: S.t, k: S.k, s: S.s }).then(function (res) {
+        if (res.status !== 'ok') return skrinRalat(res.message);
+        S.cfg = res.data;
+        if (S.t === 'daftar') return mulaDaftar();
+        if (S.t === 'pradaftar') return mulaPradaftar();
+        if (S.t === 'checkin') return mulaCheckin();
+        mulaMaklumBalas();
+      });
+    });
+  }
+
+  mula();
+})();
+</script>
+</body>
+</html>
