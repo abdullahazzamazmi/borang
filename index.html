@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-v7J74lBtqC/Dr/AE43forc7icHkVM8Svb6YI6PFEWQE='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8Jt6dEV016n7kyBRyKJY7jNl9cNFoPAKnE1tUg+Z8T8='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -245,8 +245,8 @@
  * Scripts.html — Frontend borang awam.
  * - Semua teks daripada pelayan/pengguna dipaparkan dengan textContent (tiada innerHTML data).
  * - Frontend hanya untuk UX. Semua pengesahan sebenar berlaku di backend.
- * - Tiada data peribadi disimpan dalam localStorage. Satu-satunya nilai yang disimpan
- *   ialah penanda peranti rawak (bukan data peribadi) untuk elak kehadiran ahli berganda.
+ * - Tiada apa-apa disimpan dalam localStorage (v1.5.0: penanda peranti tidak diperlukan lagi
+ *   kerana semua aliran kini guna emel). Nama dalam ucapan dipapar dengan textContent sahaja.
  */
 (function () {
   'use strict';
@@ -256,7 +256,6 @@
     cfg: null,          // daripada apiMula
     emel: '',
     profil: null,       // profil sementara (memori sahaja) untuk aliran maklum balas
-    mod: 'EMEL',        // maklum balas: 'EMEL' atau 'AHLI'
     ahli: false         // pra-daftar / check-in: pengguna memilih "Saya Ahli IKRAM" (untuk ucapan & emel baharu sahaja)
   };
   var app = document.getElementById('app');
@@ -421,22 +420,6 @@
     tunjukRalat(kotak, res.message || 'Maaf, berlaku ralat.');
   }
 
-  function peranti() {
-    try {
-      var k = 'jpm_peranti';
-      var v = window.localStorage.getItem(k);
-      if (!v || !/^[a-f0-9]{32}$/.test(v)) {
-        var a = new Uint8Array(16);
-        window.crypto.getRandomValues(a);
-        v = Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
-        window.localStorage.setItem(k, v);
-      }
-      return v;
-    } catch (e) {
-      return '';
-    }
-  }
-
   function emelSah(v) {
     return v.length <= 254 && /^[^\s@<>"'`,;]+@[^\s@<>"'`,;]+\.[a-zA-Z]{2,}$/.test(v);
   }
@@ -506,6 +489,12 @@
       h('p', { 'class': 'redup', text: mesej || 'Pautan ini tidak sah atau tidak aktif pada masa ini.' }),
       h('p', { 'class': 'redup kecil', text: 'Jika anda mengimbas kod QR, pastikan kod itu untuk sesi yang betul atau minta pautan baharu daripada penganjur.' })
     ]));
+  }
+
+  /** "Terima kasih, {nama}!" jika nama ada (dipapar dengan textContent), jika tidak teks ganti. */
+  function tajukNama(awalan, nama, ganti) {
+    var n = String(nama || '').trim();
+    return n ? (awalan + ', ' + n + '!') : ganti;
   }
 
   function skrinSelesai(tajuk, mesej, tambahan, jenisIkon) {
@@ -774,7 +763,7 @@
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           if (res.data.langkah === 'PROFIL') return pradaftarProfil();
-          pradaftarSelesai(res.data.semula);
+          pradaftarSelesai(res.data.semula, res.data.nama);
         });
       }
     });
@@ -793,27 +782,27 @@
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           S.profil = null;
-          pradaftarSelesai(res.data.semula);
+          pradaftarSelesai(res.data.semula, res.data.nama);
         });
       }
     });
   }
 
-  function pradaftarSelesai(semula) {
+  function pradaftarSelesai(semula, nama) {
     if (S.ahli) {
-      return skrinSelesai('Terima kasih, Ahli IKRAM!', [
+      return skrinSelesai(tajukNama('Terima kasih', nama, 'Terima kasih, Ahli IKRAM!'), [
         'Terima kasih kerana telah menjadi Ahli IKRAM dan terus menyokong program ini. Selamat berjuang bersama!',
         'Peringatan akan dihantar ke emel anda sebelum program.'
       ], NOTA_HARI_PROGRAM, 'hati');
     }
     if (semula) {
-      return skrinSelesai('Selamat kembali!', [
+      return skrinSelesai(tajukNama('Selamat kembali', nama, 'Selamat kembali!'), [
         'Terima kasih kerana sudi bersama IKRAM sekali lagi! Pendaftaran anda untuk program ini telah kami terima.',
         'Peringatan akan dihantar ke emel anda sebelum program. Jumpa anda nanti!'
       ], NOTA_HARI_PROGRAM, 'hati');
     }
-    skrinSelesai('Pendaftaran diterima', [
-      'Terima kasih! Pendaftaran awal anda untuk program ini telah kami terima.',
+    skrinSelesai(tajukNama('Terima kasih', nama, 'Pendaftaran diterima'), [
+      'Pendaftaran awal anda untuk program ini telah kami terima.',
       'Peringatan akan dihantar ke emel anda sebelum program. Jumpa anda nanti!'
     ], NOTA_HARI_PROGRAM);
   }
@@ -845,7 +834,7 @@
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           if (res.data.langkah === 'PROFIL') return checkinProfil();
-          checkinSelesai();
+          checkinSelesai(res.data.nama);
         });
       }
     });
@@ -863,21 +852,21 @@
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           S.profil = null;
-          checkinSelesai();
+          checkinSelesai(res.data.nama);
         });
       }
     });
   }
 
-  function checkinSelesai() {
+  function checkinSelesai(nama) {
     if (S.ahli) {
-      return skrinSelesai('Kehadiran direkodkan', [
+      return skrinSelesai(tajukNama('Terima kasih', nama, 'Kehadiran direkodkan'), [
         'Terima kasih kerana hadir dan menyokong program ini sebagai Ahli IKRAM.',
         'Selamat berjuang bersama!'
       ], 'Selepas sesi, imbas kod QR maklum balas untuk berkongsi pandangan anda.', 'hati');
     }
-    skrinSelesai('Kehadiran direkodkan', [
-      'Terima kasih! Kehadiran anda bagi sesi ini telah direkodkan.',
+    skrinSelesai(tajukNama('Terima kasih', nama, 'Kehadiran direkodkan'), [
+      'Kehadiran anda bagi sesi ini telah direkodkan.',
       'Selamat mengikuti program.'
     ], 'Selepas sesi, imbas kod QR maklum balas untuk berkongsi pandangan anda.');
   }
@@ -892,16 +881,16 @@
       tajuk: 'Kongsi maklum balas anda',
       pengenalan: 'Maklum balas anda membantu kami menambah baik program akan datang.',
       kecilBukan: 'Masukkan emel untuk bermula',
-      kecilAhli: 'Jawab tanpa maklumat peribadi',
-      bukanAhli: function () { S.mod = 'EMEL'; mbEmel(); },
-      ahli: function () { S.mod = 'AHLI'; S.profil = null; skrinSoalan(); }
+      kecilAhli: 'Masukkan emel untuk bermula',
+      bukanAhli: function () { S.ahli = false; mbEmel(); },
+      ahli: function () { S.ahli = true; mbEmel(); }
     });
   }
 
   function mbEmel() {
     skrinEmel({
       tajuk: 'Masukkan emel anda',
-      pengenalan: 'Emel digunakan supaya setiap peserta menjawab sekali bagi setiap sesi.',
+      pengenalan: 'Emel digunakan supaya setiap peserta menjawab sekali bagi setiap sesi, dan untuk menghantar emel terima kasih (serta e-sijil jika disediakan).',
       kembali: mulaMaklumBalas,
       onHantar: function (emel, btn, kotak) {
         sibuk(btn, true);
@@ -919,7 +908,7 @@
 
   function mbProfil() {
     skrinProfil({
-      tajuk: 'Maklumat diri',
+      tajuk: S.ahli ? 'Maklumat diri (Ahli IKRAM)' : 'Maklumat diri',
       pengenalan: 'Ini kali pertama emel ini digunakan. Sila isi maklumat ringkas sebelum menjawab soalan.',
       langkah: 'Langkah 2',
       butangLabel: 'Teruskan ke soalan',
@@ -933,15 +922,9 @@
   }
 
   /** dapatSijil: true jika program menyediakan sijil DAN syarat No. KP (jika ada) dipenuhi. */
-  function mbSelesai(dapatSijil, tanpaIc) {
-    if (S.mod === 'AHLI') {
-      return skrinSelesai('Terima kasih!', [
-        'Maklum balas anda telah kami terima.',
-        'Pandangan anda membantu kami menambah baik program akan datang.'
-      ]);
-    }
+  function mbSelesai(dapatSijil, tanpaIc, nama) {
     // Mesej sama sama ada kehadiran wujud atau tidak (elak enumerasi).
-    skrinSelesai('Terima kasih!', [
+    skrinSelesai(tajukNama('Terima kasih', nama, 'Terima kasih!'), [
       'Maklum balas anda telah kami terima.',
       'Jika kehadiran anda direkod, emel terima kasih' + (dapatSijil ? ' bersama e-sijil' : '') +
         ' akan dihantar ke emel anda dalam masa ±10 minit.'
@@ -969,10 +952,6 @@
     if (!cfg || !cfg.aktif) return null;
     var fs = h('fieldset', { 'class': 'soalan', attrs: { id: 'bahagian_sijil' } });
     fs.appendChild(h('legend', { text: 'E-sijil penyertaan' }));
-    if (S.mod === 'AHLI') {
-      fs.appendChild(h('p', { 'class': 'redup', text: 'E-sijil dan cabutan bertuah memerlukan emel. Isi borang menggunakan emel anda untuk layak.' }));
-      return { el: fs, kumpul: function () { return { ok: true, nilai: null }; } };
-    }
     var nama = h('input', { attrs: { type: 'text', id: 'nama_sijil', maxlength: '100', autocomplete: 'name', autocapitalize: 'characters', placeholder: 'Kosongkan untuk guna nama dalam profil anda' } });
     var wNama = medan('Nama penuh untuk sijil', nama, { pilihan: true, bantuan: 'Tulis nama seperti yang mahu dicetak. Huruf, ruang dan @ \' . - / sahaja.', mesej: 'Nama hanya boleh mengandungi huruf, ruang dan @ \' . - /' });
     fs.appendChild(wNama);
@@ -1076,10 +1055,10 @@
   }
 
   function skrinSoalan() {
-    var soalan = (S.cfg.soalan || []).filter(function (q) { return !(S.mod === 'AHLI' && q.bukanAhliSahaja); });
+    var soalan = (S.cfg.soalan || []).filter(function (q) { return !(S.ahli && q.bukanAhliSahaja); });
     var kotak = kotakRalat();
     var form = h('form', { attrs: { novalidate: true } });
-    form.appendChild(h('div', { 'class': 'langkah', text: S.mod === 'AHLI' ? 'Ahli IKRAM' : 'Langkah terakhir' }));
+    form.appendChild(h('div', { 'class': 'langkah', text: 'Langkah terakhir' }));
     form.appendChild(h('h1', { text: 'Soalan maklum balas' }));
     form.appendChild(h('p', { 'class': 'redup', text: 'Soalan bertanda * wajib dijawab.' }));
     soalan.forEach(function (q, i) { form.appendChild(binaSoalan(q, i + 1)); });
@@ -1114,10 +1093,9 @@
         rSijil.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
-      var payload = { k: S.k, mod: S.mod, jawapan: jawapan, laman: nilaiPerangkap() };
+      var payload = { k: S.k, emel: S.emel, ahli: S.ahli, jawapan: jawapan, laman: nilaiPerangkap() };
       if (rSijil.nilai) payload.sijil = rSijil.nilai;   // No. KP tidak disimpan di mana-mana dalam pelayar
-      if (S.mod === 'AHLI') payload.peranti = peranti();
-      else { payload.emel = S.emel; if (S.profil) payload.profil = S.profil; }
+      if (S.profil) payload.profil = S.profil;
 
       sibuk(btn, true);
       panggil('apiMaklumBalasHantar', payload).then(function (res) {
@@ -1127,13 +1105,12 @@
           return urusRalat(res, kotak);
         }
         S.profil = null;
-        var adaSijil = !!(S.cfg.sijil && S.cfg.sijil.aktif && S.mod !== 'AHLI');
-        mbSelesai(adaSijil && !rSijil.tanpaIc, adaSijil && !!rSijil.tanpaIc);
+        var adaSijil = !!(S.cfg.sijil && S.cfg.sijil.aktif);
+        mbSelesai(adaSijil && !rSijil.tanpaIc, adaSijil && !!rSijil.tanpaIc, res.data.nama);
       });
     });
 
     var anak = [form];
-    if (S.mod === 'AHLI') anak.push(butang('Kembali', { kelas: 'btn-pautan', klik: mulaMaklumBalas }));
     papar(kadSesi(), h('section', { 'class': 'kad' }, anak));
   }
 
