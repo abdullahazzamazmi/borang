@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-WcOsX903K5gI/2OujyU2ypUXBnXNzJgro4uicdtjVo4='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-v7J74lBtqC/Dr/AE43forc7icHkVM8Svb6YI6PFEWQE='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
-  <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
+  <meta name="borang-api" content="TAMPAL_URL_EXEC_DI_SINI">
   <title>IKRAM — Borang Awam</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
@@ -932,11 +932,69 @@
     skrinSelesai('Maklum balas telah diterima', 'Maklum balas anda bagi sesi ini telah pun kami terima. Terima kasih!');
   }
 
-  function mbSelesai() {
+  /** dapatSijil: true jika program menyediakan sijil DAN syarat No. KP (jika ada) dipenuhi. */
+  function mbSelesai(dapatSijil, tanpaIc) {
+    if (S.mod === 'AHLI') {
+      return skrinSelesai('Terima kasih!', [
+        'Maklum balas anda telah kami terima.',
+        'Pandangan anda membantu kami menambah baik program akan datang.'
+      ]);
+    }
+    // Mesej sama sama ada kehadiran wujud atau tidak (elak enumerasi).
     skrinSelesai('Terima kasih!', [
       'Maklum balas anda telah kami terima.',
-      'Pandangan anda membantu kami menambah baik program akan datang.'
-    ]);
+      'Jika kehadiran anda direkod, emel terima kasih' + (dapatSijil ? ' bersama e-sijil' : '') +
+        ' akan dihantar ke emel anda dalam masa ±10 minit.'
+    ], tanpaIc ? 'Anda tidak mengisi No. Kad Pengenalan, jadi e-sijil tidak dapat dikeluarkan untuk program ini.' : null);
+  }
+
+  var NAMA_SIJIL_RE = /^[\p{L}\p{M} @'.\-\/]+$/u;
+  var IC_BANTUAN = 'Hanya dicetak pada e-sijil. Dipadam selepas 30 hari. Tanpa No. KP, e-sijil tidak dikeluarkan.';
+
+  /** Semak No. KP di pelayar (backend tetap menyemak semula). Pulang digit atau '' / null jika salah. */
+  function semakIc(v) {
+    var s = String(v || '').replace(/[\s-]/g, '');
+    if (!s) return '';
+    if (!/^\d{12}$/.test(s)) return null;
+    var yy = +s.slice(0, 2), mm = +s.slice(2, 4), dd = +s.slice(4, 6);
+    if (mm < 1 || mm > 12 || dd < 1) return null;
+    var hari = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mm - 1];
+    if (dd > hari || (mm === 2 && dd === 29 && yy % 4 !== 0)) return null;
+    return s;
+  }
+
+  /** Bahagian e-sijil dalam borang maklum balas. Pulang null jika sijil tidak aktif. */
+  function binaBahagianSijil() {
+    var cfg = S.cfg.sijil;
+    if (!cfg || !cfg.aktif) return null;
+    var fs = h('fieldset', { 'class': 'soalan', attrs: { id: 'bahagian_sijil' } });
+    fs.appendChild(h('legend', { text: 'E-sijil penyertaan' }));
+    if (S.mod === 'AHLI') {
+      fs.appendChild(h('p', { 'class': 'redup', text: 'E-sijil dan cabutan bertuah memerlukan emel. Isi borang menggunakan emel anda untuk layak.' }));
+      return { el: fs, kumpul: function () { return { ok: true, nilai: null }; } };
+    }
+    var nama = h('input', { attrs: { type: 'text', id: 'nama_sijil', maxlength: '100', autocomplete: 'name', autocapitalize: 'characters', placeholder: 'Kosongkan untuk guna nama dalam profil anda' } });
+    var wNama = medan('Nama penuh untuk sijil', nama, { pilihan: true, bantuan: 'Tulis nama seperti yang mahu dicetak. Huruf, ruang dan @ \' . - / sahaja.', mesej: 'Nama hanya boleh mengandungi huruf, ruang dan @ \' . - /' });
+    fs.appendChild(wNama);
+    var ic = null, wIc = null;
+    if (cfg.perluIc) {
+      ic = h('input', { attrs: { type: 'text', id: 'no_kp', maxlength: '14', inputmode: 'numeric', autocomplete: 'off', placeholder: '900101-14-1234' } });
+      wIc = medan('No. Kad Pengenalan', ic, { pilihan: true, bantuan: IC_BANTUAN, mesej: 'No. Kad Pengenalan tidak sah. Masukkan 12 digit, contoh 900101-14-1234.' });
+      fs.appendChild(wIc);
+    }
+    return {
+      el: fs,
+      kumpul: function () {
+        var n = nama.value.trim().replace(/\s+/g, ' ');
+        var namaSalah = !!n && !NAMA_SIJIL_RE.test(n);
+        tandaSalah(wNama, namaSalah);
+        var noKp = '';
+        var icSalah = false;
+        if (ic) { noKp = semakIc(ic.value); icSalah = (noKp === null); tandaSalah(wIc, icSalah); }
+        if (namaSalah || icSalah) return { ok: false, el: namaSalah ? wNama : wIc };
+        return { ok: true, nilai: { nama: n, no_kp: noKp || '' }, tanpaIc: !!ic && !noKp };
+      }
+    };
   }
 
   function binaSoalan(q, no) {
@@ -1025,6 +1083,8 @@
     form.appendChild(h('h1', { text: 'Soalan maklum balas' }));
     form.appendChild(h('p', { 'class': 'redup', text: 'Soalan bertanda * wajib dijawab.' }));
     soalan.forEach(function (q, i) { form.appendChild(binaSoalan(q, i + 1)); });
+    var bSijil = binaBahagianSijil();
+    if (bSijil) form.appendChild(bSijil.el);
     form.appendChild(perangkap());
     form.appendChild(kotak);
     var btn = butang('Hantar maklum balas', { type: 'submit' });
@@ -1048,7 +1108,14 @@
         pertama.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
+      var rSijil = bSijil ? bSijil.kumpul() : { ok: true, nilai: null };
+      if (!rSijil.ok) {
+        tunjukRalat(kotak, 'Sila semak maklumat e-sijil.');
+        rSijil.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
       var payload = { k: S.k, mod: S.mod, jawapan: jawapan, laman: nilaiPerangkap() };
+      if (rSijil.nilai) payload.sijil = rSijil.nilai;   // No. KP tidak disimpan di mana-mana dalam pelayar
       if (S.mod === 'AHLI') payload.peranti = peranti();
       else { payload.emel = S.emel; if (S.profil) payload.profil = S.profil; }
 
@@ -1060,7 +1127,8 @@
           return urusRalat(res, kotak);
         }
         S.profil = null;
-        mbSelesai();
+        var adaSijil = !!(S.cfg.sijil && S.cfg.sijil.aktif && S.mod !== 'AHLI');
+        mbSelesai(adaSijil && !rSijil.tanpaIc, adaSijil && !!rSijil.tanpaIc);
       });
     });
 
