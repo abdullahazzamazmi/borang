@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8Jt6dEV016n7kyBRyKJY7jNl9cNFoPAKnE1tUg+Z8T8='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-xM+DEa2G+mT8DsE7HEvPDDrNDk8hOGB8Y7aFenmKZ8A='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
-  <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
+  <meta name="borang-api" content="TAMPAL_URL_EXEC_DI_SINI">
   <title>IKRAM — Borang Awam</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
@@ -123,7 +123,7 @@
   }
   .wajib { color: var(--ralat); margin-left: 2px; }
   .pilihan-teg { color: var(--redup); font-weight: 400; font-size: 13px; }
-  input[type=text], input[type=email], input[type=tel], select, textarea {
+  input[type=text], input[type=email], input[type=tel], input[type=date], select, textarea {
     width: 100%; min-height: 50px; padding: 12px 14px; font: inherit; font-size: 16px;
     color: var(--teks); background: var(--kad); border: 1.5px solid var(--sempadan); border-radius: 10px;
     appearance: none; -webkit-appearance: none;
@@ -134,6 +134,10 @@
     background-size: 6px 6px; background-repeat: no-repeat; padding-right: 36px;
   }
   textarea { min-height: 110px; resize: vertical; }
+  input[type=date] { display: block; text-align: left; min-width: 0; line-height: 1.3; }
+  input[type=date]::-webkit-date-and-time-value { text-align: left; }
+  input[type=date]::-webkit-calendar-picker-indicator { opacity: .7; cursor: pointer; padding: 4px; }
+  @media (prefers-color-scheme: dark) { input[type=date] { color-scheme: dark; } }
   input:focus, select:focus, textarea:focus, .btn:focus-visible, .pil input:focus-visible + span {
     outline: 3px solid var(--fokus); outline-offset: 2px;
   }
@@ -546,6 +550,26 @@
    * Borang profil (individu baharu).
    * opt: { tajuk, pengenalan, langkah, minatIkram:bool, butangLabel, onHantar(profil, minat, btn, kotak), kembali }
    */
+  /** Tarikh hari ini (peranti) 'yyyy-MM-dd' — hanya jika pelayan tidak memberi hariIni. */
+  function isoHariIni() {
+    var t = new Date();
+    return t.getFullYear() + '-' + ('0' + (t.getMonth() + 1)).slice(-2) + '-' + ('0' + t.getDate()).slice(-2);
+  }
+
+  /** Umur penuh daripada tarikh lahir 'yyyy-MM-dd'; null jika tidak sah / masa depan / > 120. */
+  function umurDaripada(iso, rujukan) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    if (!m) return null;
+    var y = +m[1], mo = +m[2], d = +m[3];
+    var t = new Date(Date.UTC(y, mo - 1, d));
+    if (t.getUTCFullYear() !== y || t.getUTCMonth() !== mo - 1 || t.getUTCDate() !== d) return null;
+    if (iso > rujukan) return null;
+    var r = rujukan.split('-').map(Number);
+    var u = r[0] - y;
+    if (r[1] < mo || (r[1] === mo && r[2] < d)) u--;
+    return (u >= 0 && u <= 120) ? u : null;
+  }
+
   function skrinProfil(opt) {
     var cfg = S.cfg;
     var p = cfg.pilihan;
@@ -557,7 +581,11 @@
     var tel = h('input', { attrs: { type: 'tel', id: 'telefon', autocomplete: 'tel', inputmode: 'tel', maxlength: '20' } });
     tel.value = d.telefon || '';
     var negeri = pilihanSelect('negeri_tinggal', p.negeri_tinggal, d.negeri_tinggal);
-    var umur = pilihanSelect('julat_umur', p.julat_umur, d.julat_umur);
+    // v1.6.0: tarikh lahir (ganti julat umur). min/max sebagai panduan; backend menyemak semula.
+    var hariIni = /^\d{4}-\d{2}-\d{2}$/.test(cfg.hariIni || '') ? cfg.hariIni : isoHariIni();
+    var umur = h('input', { attrs: { type: 'date', id: 'tarikh_lahir', min: '1900-01-01', max: hariIni, autocomplete: 'bday', required: true } });
+    umur.value = d.tarikh_lahir || '';
+    var tiadaPemilihTarikh = umur.type !== 'date';   // pelayar lama: kotak teks biasa
     var bangsa = pilihanSelect('bangsa', p.bangsa, d.bangsa);
     var kerja = pilihanSelect('pekerjaan', p.pekerjaan, d.pekerjaan);
     var didik = pilihanSelect('pendidikan', p.pendidikan, d.pendidikan);
@@ -572,7 +600,8 @@
     var wNama = medan('Nama penuh', nama, { wajib: true });
     var wTel = medan('No. telefon', tel, { pilihan: true, bantuan: 'Contoh: 0123456789', mesej: 'No. telefon tidak sah.' });
     var wNegeri = medan('Negeri tempat tinggal', negeri, { wajib: true, mesej: 'Sila pilih negeri tempat tinggal.' });
-    var wUmur = medan('Julat umur', umur, { wajib: true, mesej: 'Sila pilih julat umur.' });
+    var wUmur = medan('Tarikh lahir', umur, { wajib: true, mesej: 'Sila masukkan tarikh lahir yang sah.',
+      bantuan: tiadaPemilihTarikh ? 'Format: TTTT-BB-HH, contoh 1990-01-31' : null });
     var wJantina = h('div', { 'class': 'medan' }, [
       h('div', { 'class': 'tajuk-medan' }, ['Jantina', h('span', { 'class': 'wajib', text: '*', attrs: { 'aria-hidden': 'true' } })]),
       jantinaSeg,
@@ -593,19 +622,22 @@
       h('div', { 'class': 'mesej-medan', text: 'Persetujuan diperlukan untuk meneruskan.' })
     ]);
 
+    var maksPenjaga = (typeof cfg.umurMaksPenjaga === 'number') ? cfg.umurMaksPenjaga : 18;
     var cbPenjaga = h('input', { attrs: { type: 'checkbox', id: 'penjaga' } });
     cbPenjaga.checked = !!d.persetujuan_penjaga;
     var wPenjaga = h('div', { 'class': 'medan' }, [
       h('label', { 'class': 'setuju amaran', attrs: { 'for': 'penjaga' } }, [cbPenjaga,
-        h('span', { text: 'Saya berumur 18 tahun dan ke bawah, dan ibu bapa/penjaga saya telah bersetuju saya berkongsi maklumat ini.' })]),
+        h('span', { text: 'Saya berumur ' + maksPenjaga + ' tahun dan ke bawah, dan ibu bapa/penjaga saya telah bersetuju saya berkongsi maklumat ini.' })]),
       h('div', { 'class': 'mesej-medan', text: 'Persetujuan ibu bapa/penjaga diperlukan.' })
     ]);
     function kemasPenjaga() {
-      var perlu = (cfg.penjaga || []).indexOf(umur.value) !== -1;
+      var u = umurDaripada(umur.value, hariIni);
+      var perlu = u !== null && u <= maksPenjaga;   // UX sahaja; backend menyemak semula
       wPenjaga.style.display = perlu ? '' : 'none';
       if (!perlu) cbPenjaga.checked = false;
     }
     umur.addEventListener('change', kemasPenjaga);
+    umur.addEventListener('input', kemasPenjaga);
     kemasPenjaga();
 
     var cbMinat = null;
@@ -642,7 +674,7 @@
         nama: nama.value.trim(),
         telefon: tel.value.trim(),
         negeri_tinggal: negeri.value,
-        julat_umur: umur.value,
+        tarikh_lahir: umur.value.trim(),
         jantina: jantinaPilih ? jantinaPilih.value : '',
         bangsa: bangsa.value,
         pekerjaan: kerja.value,
@@ -656,7 +688,7 @@
         [wTel, telBersih && !/^\+?\d{9,15}$/.test(telBersih)],
         [wNegeri, !profil.negeri_tinggal],
         [wJantina, !profil.jantina],
-        [wUmur, !profil.julat_umur],
+        [wUmur, umurDaripada(profil.tarikh_lahir, hariIni) === null],
         [wPdpa, !profil.persetujuan_pdpa],
         [wPenjaga, wPenjaga.style.display !== 'none' && !profil.persetujuan_penjaga]
       ];
