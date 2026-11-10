@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-xM+DEa2G+mT8DsE7HEvPDDrNDk8hOGB8Y7aFenmKZ8A='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tLGD85MrwIvAZtGGmZH06B5SYGYYX6sHWAQV5BDWUnY='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -177,6 +177,8 @@
     display: flex; gap: 12px; align-items: flex-start; padding: 14px; margin-top: 12px;
     border: 1.5px solid var(--sempadan); border-radius: 10px; cursor: pointer;
   }
+  .medan > label.setuju { display: flex; margin-bottom: 0; font-weight: 400; font-size: 16px; }
+  .medan > label.setuju + label.setuju { margin-top: 8px; }
   .setuju input { width: 24px; height: 24px; flex: none; margin: 0; accent-color: var(--utama); }
   .setuju.amaran { background: var(--amaran-lembut); }
   .notis {
@@ -548,7 +550,7 @@
 
   /**
    * Borang profil (individu baharu).
-   * opt: { tajuk, pengenalan, langkah, minatIkram:bool, butangLabel, onHantar(profil, minat, btn, kotak), kembali }
+   * opt: { tajuk, pengenalan, langkah, minatIkram:bool, butangLabel, onHantar(profil, minat{minat_ikram,minat_berkala}, btn, kotak), kembali }
    */
   /** Tarikh hari ini (peranti) 'yyyy-MM-dd' — hanya jika pelayan tidak memberi hariIni. */
   function isoHariIni() {
@@ -640,12 +642,20 @@
     umur.addEventListener('input', kemasPenjaga);
     kemasPenjaga();
 
-    var cbMinat = null;
+    // v1.7.0: dua kotak minat (Prospek dua maksud). Bukan ahli + emel baharu sahaja.
+    // Frontend hanya menghantar boolean; jenis minat ditentukan oleh backend.
+    var cbMinat = null, cbBerkala = null;
     var wMinat = null;
     if (opt.minatIkram) {
       cbMinat = h('input', { attrs: { type: 'checkbox', id: 'minat_ikram' } });
-      wMinat = h('label', { 'class': 'setuju', attrs: { 'for': 'minat_ikram' } }, [cbMinat,
-        h('span', { text: 'Saya berminat untuk mengenali dan menyertai IKRAM dengan lebih dekat.' })]);
+      cbBerkala = h('input', { attrs: { type: 'checkbox', id: 'minat_berkala' } });
+      wMinat = h('div', { 'class': 'medan' }, [
+        h('div', { 'class': 'tajuk-medan', text: 'Minat anda ' }, [h('span', { 'class': 'pilihan-teg', text: '(pilihan)' })]),
+        h('label', { 'class': 'setuju', attrs: { 'for': 'minat_ikram' } }, [cbMinat,
+          h('span', { text: 'Saya berminat untuk mengenali dan menyertai IKRAM dengan lebih dekat.' })]),
+        h('label', { 'class': 'setuju', attrs: { 'for': 'minat_berkala' } }, [cbBerkala,
+          h('span', { text: 'Saya berminat mengikuti aktiviti berkala IKRAM (contoh kelas / pertemuan mingguan).' })])
+      ]);
     }
 
     var tambahan = h('details', { 'class': 'tambahan' }, [
@@ -696,7 +706,7 @@
       semak.forEach(function (x) { tandaSalah(x[0], x[1]); if (x[1] && !pertama) pertama = x[0]; });
       if (pertama) { pertama.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
       S.profil = profil;
-      opt.onHantar(profil, cbMinat ? cbMinat.checked : false, btn, kotak);
+      opt.onHantar(profil, { minat_ikram: !!(cbMinat && cbMinat.checked), minat_berkala: !!(cbBerkala && cbBerkala.checked) }, btn, kotak);
     });
 
     papar(kadSesi(), h('section', { 'class': 'kad' }, [form, opt.kembali ? butang('Kembali', { kelas: 'btn-pautan', klik: opt.kembali }) : null]));
@@ -749,7 +759,7 @@
       kembali: daftarEmel,
       onHantar: function (profil, minat, btn, kotak) {
         sibuk(btn, true);
-        panggil('apiDaftarProfil', { s: S.s, emel: S.emel, profil: profil, minat_ikram: minat, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiDaftarProfil', { s: S.s, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, laman: nilaiPerangkap() }).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           S.profil = null;
@@ -810,7 +820,7 @@
       kembali: pradaftarEmel,
       onHantar: function (profil, minat, btn, kotak) {
         sibuk(btn, true);
-        panggil('apiPradaftarProfil', { k: S.k, s: S.s, emel: S.emel, profil: profil, minat_ikram: minat, ahli: S.ahli, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiPradaftarProfil', { k: S.k, s: S.s, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, ahli: S.ahli, laman: nilaiPerangkap() }).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           S.profil = null;
@@ -876,11 +886,12 @@
     skrinProfil({
       tajuk: S.ahli ? 'Daftar kali pertama (Ahli IKRAM)' : 'Daftar kali pertama',
       pengenalan: 'Ini kali pertama emel ini digunakan. Sila isi maklumat ringkas di bawah. Medan bertanda * wajib diisi.',
+      minatIkram: !S.ahli,
       butangLabel: 'Rekod kehadiran',
       kembali: checkinEmel,
       onHantar: function (profil, minat, btn, kotak) {
         sibuk(btn, true);
-        panggil('apiCheckinProfil', { k: S.k, emel: S.emel, profil: profil, ahli: S.ahli, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiCheckinProfil', { k: S.k, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, ahli: S.ahli, laman: nilaiPerangkap() }).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           S.profil = null;
