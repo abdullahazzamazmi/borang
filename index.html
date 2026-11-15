@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tLGD85MrwIvAZtGGmZH06B5SYGYYX6sHWAQV5BDWUnY='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-+srov0OcarVRm8ZfBxkNdnm0tlrkc5WGB69vIc729b4='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -29,6 +29,9 @@
     --amaran-lembut: #fff6e0;
     --fokus: #2f6fd0;
     --jejari: 14px;
+    --figura-anda: #0b2d5b;   /* barisan keluarga: wakil */
+    --figura-dewasa: #12407e;
+    --figura-anak: #5b8fd8;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -47,6 +50,9 @@
       --ralat-lembut: #3a1d1a;
       --amaran-lembut: #3a3018;
       --fokus: #8fb3ec;
+      --figura-anda: #e4ebf6;
+      --figura-dewasa: #8fb3ec;
+      --figura-anak: #5b8fd8;
     }
   }
   * { box-sizing: border-box; }
@@ -212,6 +218,62 @@
   .tengah { text-align: center; }
   .tengah p { margin: 8px 0 0; }
 
+
+  /* ---------- Keluarga (v1.8.0) ---------- */
+  .panel-keluarga {
+    margin-top: 16px; padding: 14px 14px 10px; border-radius: 12px;
+    background: var(--utama-lembut); border: 1px solid transparent;
+  }
+  .barisan { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2px 4px; min-height: 58px; }
+  .figura { position: relative; display: inline-flex; flex-direction: column; align-items: center; width: 22px; }
+  .figura svg { width: 22px; height: 37px; display: block; }
+  .figura.anda svg { fill: var(--figura-anda); width: 26px; height: 43px; }
+  .figura.anda { width: 30px; margin-right: 6px; }
+  .figura.dewasa svg { fill: var(--figura-dewasa); }
+  .figura.anak svg { fill: var(--figura-anak); }
+  .figura-label { font-size: 11px; font-weight: 700; color: var(--aksen-teks); line-height: 1; margin-top: 3px; }
+  .figura.muncul svg { animation: muncul .22s cubic-bezier(.3, 1.4, .5, 1) both; transform-origin: 50% 100%; }
+  @keyframes muncul { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+  .ringkasan { margin: 8px 0 0; font-size: 15px; font-weight: 600; }
+  .nota-imbas { margin-top: 12px; }
+
+  .medan-pembilang { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .pembilang-teks { min-width: 0; }
+  .pembilang-teks .tajuk-medan { margin-bottom: 2px; }
+  .pembilang { display: flex; align-items: center; gap: 6px; flex: none; }
+  .pembilang-btn {
+    width: 48px; height: 48px; border-radius: 12px; border: 1.5px solid var(--sempadan); background: var(--kad);
+    color: var(--aksen-teks); font: inherit; font-size: 24px; font-weight: 700; line-height: 1; cursor: pointer;
+  }
+  .pembilang-btn:hover:not([disabled]) { border-color: var(--utama); background: var(--utama-lembut); }
+  .pembilang-btn:active:not([disabled]) { transform: translateY(1px); }
+  .pembilang-btn[disabled] { opacity: .35; cursor: not-allowed; }
+  .pembilang-btn:focus-visible, .btn-buang:focus-visible { outline: 3px solid var(--fokus); outline-offset: 2px; }
+  .pembilang-nilai { min-width: 2.2ch; text-align: center; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  .senarai-anak { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .senarai-anak:empty { display: none; }
+  .baris-anak { border: 1.5px solid var(--sempadan); border-radius: 12px; padding: 10px 12px 12px; background: var(--kad); }
+  .baris-anak.salah { border-color: var(--ralat); background: var(--ralat-lembut); }
+  .baris-anak.salah .mesej-medan { display: block; }
+  .baris-anak-kepala { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .baris-anak-no { font-weight: 700; font-size: 15px; }
+  .btn-buang {
+    background: none; border: none; color: var(--redup); font: inherit; font-size: 14px; font-weight: 600;
+    min-height: 36px; padding: 0 6px; border-radius: 8px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .btn-buang:hover { color: var(--ralat); }
+  .baris-anak-medan { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 8px; }
+  .baris-anak-medan select { min-height: 48px; }
+  .segmen-kecil .pil span { min-height: 48px; font-size: 15px; padding: 6px 4px; }
+  @media (max-width: 340px) { .baris-anak-medan { grid-template-columns: 1fr; } }
+
+  .btn-tambah { border-style: dashed; margin-top: 10px; min-height: 50px; font-size: 16px; }
+  .btn-tambah[disabled] { opacity: .45; cursor: not-allowed; }
+  .tanda-tambah { font-size: 22px; line-height: 1; font-weight: 700; }
+  .nota-had { color: var(--aksen-teks); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { .figura.muncul svg { animation: none; } }
+
   .perangkap { position: absolute !important; left: -10000px !important; width: 1px; height: 1px; overflow: hidden; }
 
   .pemutar {
@@ -262,7 +324,8 @@
     cfg: null,          // daripada apiMula
     emel: '',
     profil: null,       // profil sementara (memori sahaja) untuk aliran maklum balas
-    ahli: false         // pra-daftar / check-in: pengguna memilih "Saya Ahli IKRAM" (untuk ucapan & emel baharu sahaja)
+    ahli: false,        // pra-daftar / check-in: pengguna memilih "Saya Ahli IKRAM" (untuk ucapan & emel baharu sahaja)
+    keluarga: null      // v1.8.0: { dewasa, anak:[{umur,jantina}], setuju_penjaga } — memori sahaja
   };
   var app = document.getElementById('app');
 
@@ -611,7 +674,8 @@
     ]);
 
     // Notis PDPA + persetujuan
-    var notis = h('div', { 'class': 'notis', text: cfg.pdpa.teks, attrs: { tabindex: '0', role: 'region', 'aria-label': 'Notis privasi' } });
+    var teksNotis = cfg.pdpa.teks + (cfg.keluarga && cfg.keluarga.notis ? '\n\n' + cfg.keluarga.notis : '');
+    var notis = h('div', { 'class': 'notis', text: teksNotis, attrs: { tabindex: '0', role: 'region', 'aria-label': 'Notis privasi' } });
     var cbPdpa = h('input', { attrs: { type: 'checkbox', id: 'pdpa' } });
     cbPdpa.checked = !!d.persetujuan_pdpa;
     var lPdpa = h('label', { 'class': 'setuju', attrs: { 'for': 'pdpa' } }, [cbPdpa,
@@ -713,6 +777,202 @@
   }
 
   // -------------------------------------------------------------------------
+  // Keluarga (v1.8.0) — wakil + ahli keluarga TANPA NAMA
+  // -------------------------------------------------------------------------
+
+  /** Program KELUARGA? Ditentukan oleh pelayan (apiMula), bukan pilihan pengguna. */
+  function adaKeluarga() { return !!(S.cfg && S.cfg.keluarga); }
+
+  /** Payload keluarga untuk dihantar (hanya jika program KELUARGA). */
+  function payloadKeluarga(p) {
+    if (adaKeluarga()) p.keluarga = S.keluarga || { dewasa: 0, anak: [], setuju_penjaga: false };
+    return p;
+  }
+
+  /** "1 dewasa dan 3 anak" daripada apa yang PENGGUNA sendiri isi (bukan data Sheet). */
+  function teksKeluarga(k) {
+    if (!k) return '';
+    var bah = [];
+    if (k.dewasa) bah.push(k.dewasa + ' dewasa');
+    if (k.anak && k.anak.length) bah.push(k.anak.length + ' anak');
+    return bah.join(' dan ');
+  }
+
+  var FIGURA = {
+    besar: '<svg viewBox="0 0 24 40" aria-hidden="true"><circle cx="12" cy="7" r="6"/><path d="M2 40V23c0-5.5 4.5-9 10-9s10 3.5 10 9v17z"/></svg>',
+    kecil: '<svg viewBox="0 0 24 40" aria-hidden="true"><circle cx="12" cy="18" r="5"/><path d="M4 40V31c0-4.4 3.6-7 8-7s8 2.6 8 7v9z"/></svg>'
+  };
+
+  function figura(jenis, label, baharu) {
+    var f = h('span', { 'class': 'figura ' + jenis + (baharu ? ' muncul' : '') });
+    f.innerHTML = jenis === 'anak' ? FIGURA.kecil : FIGURA.besar;   // SVG statik dalam kod — bukan data
+    if (label) f.appendChild(h('span', { 'class': 'figura-label', text: label }));
+    return f;
+  }
+
+  /**
+   * Langkah ahli keluarga. Tiada nama dikumpul: dewasa = bilangan, anak = umur + jantina.
+   * opt: { tajuk, langkah, nota, kembali, onTeruskan() }
+   * Hasil disimpan dalam S.keluarga (memori sahaja) dan dihantar bersama emel / profil.
+   */
+  function skrinKeluarga(opt) {
+    var kf = S.cfg.keluarga;
+    var maks = kf.maksAhli;
+    var umurMaks = kf.umurMaksAnak;
+    var lalu = S.keluarga || { dewasa: 0, anak: [], setuju_penjaga: false };
+    var st = { dewasa: lalu.dewasa, anak: lalu.anak.map(function (a) { return { umur: a.umur, jantina: a.jantina }; }) };
+    var kiraLalu = { dewasa: st.dewasa, anak: st.anak.length };
+    var uid = 0;
+    var kotak = kotakRalat();
+
+    var labelJantina = { L: 'Lelaki', P: 'Perempuan' };
+    (S.cfg.pilihan.jantina || []).forEach(function (j) { if (labelJantina[j.kod]) labelJantina[j.kod] = j.label; });
+
+    // --- Barisan keluarga (maklum balas visual) ---
+    var barisan = h('div', { 'class': 'barisan', attrs: { 'aria-hidden': 'true' } });
+    var ringkasan = h('p', { 'class': 'ringkasan', attrs: { 'aria-live': 'polite' } });
+    function lukisBarisan() {
+      while (barisan.firstChild) barisan.removeChild(barisan.firstChild);
+      barisan.appendChild(figura('anda', 'Anda'));
+      for (var i = 0; i < st.dewasa; i++) barisan.appendChild(figura('dewasa', '', i >= kiraLalu.dewasa));
+      for (var j = 0; j < st.anak.length; j++) barisan.appendChild(figura('anak', '', j >= kiraLalu.anak));
+      kiraLalu = { dewasa: st.dewasa, anak: st.anak.length };
+      var n = st.dewasa + st.anak.length;
+      ringkasan.textContent = n ? ((n + 1) + ' orang: anda, ' + teksKeluarga(st)) : 'Anda seorang sahaja';
+    }
+
+    // --- Dewasa lain: pembilang ---
+    var nilaiDewasa = h('output', { 'class': 'pembilang-nilai', attrs: { id: 'dewasa', 'aria-live': 'polite' } });
+    var btnKurang = h('button', { 'class': 'pembilang-btn', text: '−', attrs: { type: 'button', 'aria-label': 'Kurangkan dewasa lain' } });
+    var btnTambah = h('button', { 'class': 'pembilang-btn', text: '+', attrs: { type: 'button', 'aria-label': 'Tambah dewasa lain' } });
+    btnKurang.addEventListener('click', function () { if (st.dewasa > 0) { st.dewasa--; kemas(); } });
+    btnTambah.addEventListener('click', function () { if (jumlah() < maks) { st.dewasa++; kemas(); } });
+    var wDewasa = h('div', { 'class': 'medan medan-pembilang' }, [
+      h('div', { 'class': 'pembilang-teks' }, [
+        h('div', { 'class': 'tajuk-medan', text: 'Dewasa lain', attrs: { id: 'label-dewasa' } }),
+        h('div', { 'class': 'bantuan', text: 'Contoh: pasangan, datuk atau nenek. Jangan kira diri anda.' })
+      ]),
+      h('div', { 'class': 'pembilang', attrs: { role: 'group', 'aria-labelledby': 'label-dewasa' } }, [btnKurang, nilaiDewasa, btnTambah])
+    ]);
+
+    // --- Anak: satu baris setiap anak ---
+    var senaraiAnak = h('div', { 'class': 'senarai-anak' });
+    var btnAnak = butang('Tambah anak', { kelas: 'btn-garis btn-tambah' });
+    btnAnak.insertBefore(h('span', { 'class': 'tanda-tambah', text: '+', attrs: { 'aria-hidden': 'true' } }), btnAnak.firstChild);
+    btnAnak.addEventListener('click', function () {
+      if (jumlah() >= maks) return;
+      st.anak.push({ umur: '', jantina: '' });
+      kemas();
+      var akhir = senaraiAnak.lastChild && senaraiAnak.lastChild.querySelector('select');
+      if (akhir) akhir.focus();
+    });
+    var notaHad = h('p', { 'class': 'bantuan nota-had', text: 'Had ' + maks + ' ahli keluarga bagi setiap pendaftaran telah dicapai.' });
+
+    function barisAnak(a, i) {
+      uid++;
+      var no = i + 1;
+      var sel = h('select', { attrs: { id: 'umur-anak-' + uid, 'aria-label': 'Umur Anak ' + no } },
+        [h('option', { text: 'Umur', attrs: { value: '' } })]);
+      for (var u = 0; u <= umurMaks; u++) {
+        var o = h('option', { text: u === 0 ? 'Bawah 1 tahun' : u + ' tahun', attrs: { value: String(u) } });
+        if (a.umur !== '' && Number(a.umur) === u) o.selected = true;
+        sel.appendChild(o);
+      }
+      sel.addEventListener('change', function () { a.umur = sel.value === '' ? '' : Number(sel.value); bersihSalah(baris); });
+      var seg = h('div', { 'class': 'segmen segmen-kecil', attrs: { role: 'radiogroup', 'aria-label': 'Jantina Anak ' + no } });
+      ['L', 'P'].forEach(function (kod) {
+        var r = h('input', { attrs: { type: 'radio', name: 'jantina-anak-' + uid, value: kod } });
+        if (a.jantina === kod) r.checked = true;
+        r.addEventListener('change', function () { a.jantina = kod; bersihSalah(baris); });
+        seg.appendChild(h('label', { 'class': 'pil' }, [r, h('span', { text: labelJantina[kod] })]));
+      });
+      var buang = h('button', { 'class': 'btn-buang', text: 'Buang', attrs: { type: 'button', 'aria-label': 'Buang Anak ' + no } });
+      buang.addEventListener('click', function () {
+        st.anak.splice(i, 1);
+        kiraLalu.anak = Math.min(kiraLalu.anak, st.anak.length);
+        kemas();
+        (senaraiAnak.querySelectorAll('select')[Math.max(0, i - 1)] || btnAnak).focus();
+      });
+      var baris = h('div', { 'class': 'baris-anak' }, [
+        h('div', { 'class': 'baris-anak-kepala' }, [h('span', { 'class': 'baris-anak-no', text: 'Anak ' + no }), buang]),
+        h('div', { 'class': 'baris-anak-medan' }, [sel, seg]),
+        h('div', { 'class': 'mesej-medan', text: 'Pilih umur dan jantina.' })
+      ]);
+      baris._a = a;
+      return baris;
+    }
+    function bersihSalah(baris) { if (baris._a.umur !== '' && baris._a.jantina) baris.classList.remove('salah'); }
+
+    var wAnak = h('div', { 'class': 'medan' }, [
+      h('div', { 'class': 'tajuk-medan', text: 'Anak' }),
+      h('div', { 'class': 'bantuan', text: 'Umur ' + umurMaks + ' tahun dan ke bawah. Ahli keluarga berumur ' + (umurMaks + 1) + ' tahun ke atas, kira sebagai dewasa.' }),
+      senaraiAnak, btnAnak, notaHad
+    ]);
+
+    // --- Pengesahan ibu bapa / penjaga (wajib jika ada anak) ---
+    var cbPenjaga = h('input', { attrs: { type: 'checkbox', id: 'penjaga_anak' } });
+    cbPenjaga.checked = !!lalu.setuju_penjaga;
+    var wPenjaga = h('div', { 'class': 'medan' }, [
+      h('label', { 'class': 'setuju amaran', attrs: { 'for': 'penjaga_anak' } }, [cbPenjaga,
+        h('span', { text: 'Saya ialah ibu bapa / penjaga kepada anak yang disenaraikan dan bersetuju maklumat umur dan jantina mereka direkod.' })]),
+      h('div', { 'class': 'mesej-medan', text: 'Pengesahan ibu bapa atau penjaga diperlukan jika ada anak.' })
+    ]);
+    cbPenjaga.addEventListener('change', function () { if (cbPenjaga.checked) tandaSalah(wPenjaga, false); });
+
+    function jumlah() { return st.dewasa + st.anak.length; }
+    function kemas() {
+      nilaiDewasa.textContent = String(st.dewasa);
+      btnKurang.disabled = st.dewasa <= 0;
+      var penuh = jumlah() >= maks;
+      btnTambah.disabled = penuh;
+      btnAnak.disabled = penuh;
+      notaHad.style.display = penuh ? '' : 'none';
+      while (senaraiAnak.firstChild) senaraiAnak.removeChild(senaraiAnak.firstChild);
+      st.anak.forEach(function (a, i) { senaraiAnak.appendChild(barisAnak(a, i)); });
+      wPenjaga.style.display = st.anak.length ? '' : 'none';
+      lukisBarisan();
+    }
+
+    var btn = butang(opt.butangLabel || 'Teruskan', { type: 'submit' });
+    var form = h('form', { attrs: { novalidate: true } }, [
+      h('div', { 'class': 'langkah', text: opt.langkah || 'Langkah 1' }),
+      h('h1', { text: opt.tajuk }),
+      h('p', { 'class': 'redup', text: 'Nama ahli keluarga tidak diperlukan. Kami hanya merekod bilangan dewasa, serta umur dan jantina anak, untuk perancangan program.' }),
+      h('div', { 'class': 'panel-keluarga' }, [barisan, ringkasan]),
+      opt.nota ? h('p', { 'class': 'bantuan nota-imbas', text: opt.nota }) : null,
+      wDewasa, wAnak, wPenjaga, kotak, btn
+    ]);
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      sorokRalat(kotak);
+      var pertama = null;
+      Array.prototype.forEach.call(senaraiAnak.children, function (b) {
+        var salah = b._a.umur === '' || !b._a.jantina;
+        b.classList.toggle('salah', salah);
+        if (salah && !pertama) pertama = b;
+      });
+      var perluPenjaga = st.anak.length > 0 && !cbPenjaga.checked;
+      tandaSalah(wPenjaga, perluPenjaga);
+      if (!pertama && perluPenjaga) pertama = wPenjaga;
+      if (pertama) {
+        tunjukRalat(kotak, pertama === wPenjaga ? 'Sila sahkan anda ibu bapa atau penjaga kepada anak yang disenaraikan.' : 'Lengkapkan umur dan jantina bagi setiap anak.');
+        pertama.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      S.keluarga = {
+        dewasa: st.dewasa,
+        anak: st.anak.map(function (a) { return { umur: Number(a.umur), jantina: a.jantina }; }),
+        setuju_penjaga: st.anak.length > 0 && cbPenjaga.checked
+      };
+      opt.onTeruskan();
+    });
+
+    kemas();
+    papar(kadSesi(), h('section', { 'class': 'kad' }, [form, opt.kembali ? butang('Kembali', { kelas: 'btn-pautan', klik: opt.kembali }) : null]));
+  }
+
+  // -------------------------------------------------------------------------
   // A) Daftar Lead
   // -------------------------------------------------------------------------
 
@@ -785,27 +1045,41 @@
   function mulaPradaftar() {
     setSubjudul('Pendaftaran Awal');
     skrinPilihStatus({
-      tajuk: 'Daftar awal untuk program ini',
-      pengenalan: 'Tempah tempat anda sekarang. Ia mengambil masa kurang dua minit.',
-      kecilBukan: 'Masukkan emel untuk mendaftar',
-      kecilAhli: 'Masukkan emel untuk mendaftar',
-      bukanAhli: function () { S.ahli = false; pradaftarEmel(); },
-      ahli: function () { S.ahli = true; pradaftarEmel(); }
+      tajuk: adaKeluarga() ? 'Daftar awal untuk anda sekeluarga' : 'Daftar awal untuk program ini',
+      pengenalan: adaKeluarga()
+        ? 'Tempah tempat untuk anda dan ahli keluarga. Ia mengambil masa kira-kira dua minit.'
+        : 'Tempah tempat anda sekarang. Ia mengambil masa kurang dua minit.',
+      kecilBukan: adaKeluarga() ? 'Mula pendaftaran keluarga' : 'Masukkan emel untuk mendaftar',
+      kecilAhli: adaKeluarga() ? 'Mula pendaftaran keluarga' : 'Masukkan emel untuk mendaftar',
+      bukanAhli: function () { S.ahli = false; pradaftarLangkahPertama(); },
+      ahli: function () { S.ahli = true; pradaftarLangkahPertama(); }
+    });
+  }
+
+  function pradaftarLangkahPertama() { return adaKeluarga() ? pradaftarKeluarga() : pradaftarEmel(); }
+
+  function pradaftarKeluarga() {
+    skrinKeluarga({
+      tajuk: 'Siapa yang akan hadir bersama anda?',
+      langkah: 'Langkah 1',
+      kembali: mulaPradaftar,
+      onTeruskan: pradaftarEmel
     });
   }
 
   function pradaftarEmel() {
     skrinEmel({
       tajuk: 'Masukkan emel anda',
-      pengenalan: 'Peringatan program akan dihantar ke emel ini.',
-      kembali: mulaPradaftar,
+      pengenalan: adaKeluarga() ? 'Anda didaftarkan sebagai wakil keluarga. Peringatan program akan dihantar ke emel ini.' : 'Peringatan program akan dihantar ke emel ini.',
+      langkah: adaKeluarga() ? 'Langkah 2' : 'Langkah 1',
+      kembali: adaKeluarga() ? pradaftarKeluarga : mulaPradaftar,
       onHantar: function (emel, btn, kotak) {
         sibuk(btn, true);
-        panggil('apiPradaftarEmel', { k: S.k, s: S.s, emel: emel, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiPradaftarEmel', payloadKeluarga({ k: S.k, s: S.s, emel: emel, laman: nilaiPerangkap() })).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           if (res.data.langkah === 'PROFIL') return pradaftarProfil();
-          pradaftarSelesai(res.data.semula, res.data.nama);
+          pradaftarSelesai(res.data.semula, res.data.nama, res.data.kemaskini);
         });
       }
     });
@@ -816,21 +1090,23 @@
       tajuk: S.ahli ? 'Maklumat diri (Ahli IKRAM)' : 'Maklumat diri',
       pengenalan: 'Ini kali pertama emel ini digunakan. Sila isi maklumat ringkas di bawah. Medan bertanda * wajib diisi.',
       minatIkram: !S.ahli,
+      langkah: adaKeluarga() ? 'Langkah 3' : 'Langkah 2',
       butangLabel: 'Hantar pendaftaran',
       kembali: pradaftarEmel,
       onHantar: function (profil, minat, btn, kotak) {
         sibuk(btn, true);
-        panggil('apiPradaftarProfil', { k: S.k, s: S.s, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, ahli: S.ahli, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiPradaftarProfil', payloadKeluarga({ k: S.k, s: S.s, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, ahli: S.ahli, laman: nilaiPerangkap() })).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           S.profil = null;
-          pradaftarSelesai(res.data.semula, res.data.nama);
+          pradaftarSelesai(res.data.semula, res.data.nama, res.data.kemaskini);
         });
       }
     });
   }
 
-  function pradaftarSelesai(semula, nama) {
+  function pradaftarSelesai(semula, nama, kemaskini) {
+    if (adaKeluarga()) return pradaftarSelesaiKeluarga(nama, kemaskini);
     if (S.ahli) {
       return skrinSelesai(tajukNama('Terima kasih', nama, 'Terima kasih, Ahli IKRAM!'), [
         'Terima kasih kerana telah menjadi Ahli IKRAM dan terus menyokong program ini. Selamat berjuang bersama!',
@@ -849,6 +1125,21 @@
     ], NOTA_HARI_PROGRAM);
   }
 
+  /** Mesej selepas pra-daftar keluarga — mengulang apa yang pengguna sendiri isi sahaja. */
+  function pradaftarSelesaiKeluarga(nama, kemaskini) {
+    var kel = teksKeluarga(S.keluarga);
+    if (kemaskini) {
+      return skrinSelesai('Pendaftaran anda telah dikemas kini', [
+        kel ? 'Senarai ahli keluarga anda kini: ' + kel + ', bersama anda.' : 'Senarai anda kini: anda seorang sahaja.',
+        'Senarai ini menggantikan senarai yang anda hantar sebelum ini. Peringatan akan dihantar ke emel anda sebelum program.'
+      ], NOTA_HARI_PROGRAM, 'hati');
+    }
+    skrinSelesai(tajukNama('Terima kasih', nama, 'Pendaftaran diterima'), [
+      kel ? 'Pendaftaran awal untuk anda bersama ' + kel + ' telah kami terima.' : 'Pendaftaran awal anda telah kami terima.',
+      'Peringatan akan dihantar ke emel anda sebelum program. Jumpa anda sekeluarga nanti!'
+    ], 'Pada hari program, wakil keluarga sahaja perlu mengimbas kod QR check-in dan menyatakan ahli keluarga yang hadir.', S.ahli ? 'hati' : null);
+  }
+
   // -------------------------------------------------------------------------
   // B) Check-in
   // -------------------------------------------------------------------------
@@ -860,19 +1151,34 @@
       pengenalan: 'Sila pilih status anda.',
       kecilBukan: 'Masukkan emel untuk merekod kehadiran',
       kecilAhli: 'Masukkan emel untuk merekod kehadiran',
-      bukanAhli: function () { S.ahli = false; checkinEmel(); },
-      ahli: function () { S.ahli = true; checkinEmel(); }
+      bukanAhli: function () { S.ahli = false; checkinLangkahPertama(); },
+      ahli: function () { S.ahli = true; checkinLangkahPertama(); }
+    });
+  }
+
+  function checkinLangkahPertama() { return adaKeluarga() ? checkinKeluarga() : checkinEmel(); }
+
+  function checkinKeluarga() {
+    skrinKeluarga({
+      tajuk: 'Siapa yang hadir bersama anda hari ini?',
+      langkah: 'Langkah 1',
+      nota: 'Sudah check-in tadi? Isi senarai penuh sekali lagi. Ahli yang telah direkod tidak akan dikira dua kali.',
+      kembali: mulaCheckin,
+      onTeruskan: checkinEmel
     });
   }
 
   function checkinEmel() {
     skrinEmel({
       tajuk: 'Masukkan emel anda',
-      pengenalan: 'Jika anda pernah berdaftar, kehadiran anda akan terus direkodkan.',
-      kembali: mulaCheckin,
+      pengenalan: adaKeluarga()
+        ? 'Jika anda pernah berdaftar, kehadiran anda dan ahli keluarga akan terus direkodkan.'
+        : 'Jika anda pernah berdaftar, kehadiran anda akan terus direkodkan.',
+      langkah: adaKeluarga() ? 'Langkah 2' : 'Langkah 1',
+      kembali: adaKeluarga() ? checkinKeluarga : mulaCheckin,
       onHantar: function (emel, btn, kotak) {
         sibuk(btn, true);
-        panggil('apiCheckinEmel', { k: S.k, emel: emel, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiCheckinEmel', payloadKeluarga({ k: S.k, emel: emel, laman: nilaiPerangkap() })).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           if (res.data.langkah === 'PROFIL') return checkinProfil();
@@ -887,11 +1193,12 @@
       tajuk: S.ahli ? 'Daftar kali pertama (Ahli IKRAM)' : 'Daftar kali pertama',
       pengenalan: 'Ini kali pertama emel ini digunakan. Sila isi maklumat ringkas di bawah. Medan bertanda * wajib diisi.',
       minatIkram: !S.ahli,
+      langkah: adaKeluarga() ? 'Langkah 3' : 'Langkah 2',
       butangLabel: 'Rekod kehadiran',
       kembali: checkinEmel,
       onHantar: function (profil, minat, btn, kotak) {
         sibuk(btn, true);
-        panggil('apiCheckinProfil', { k: S.k, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, ahli: S.ahli, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiCheckinProfil', payloadKeluarga({ k: S.k, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, ahli: S.ahli, laman: nilaiPerangkap() })).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           S.profil = null;
@@ -902,6 +1209,13 @@
   }
 
   function checkinSelesai(nama) {
+    if (adaKeluarga()) {
+      var kel = teksKeluarga(S.keluarga);
+      return skrinSelesai(tajukNama('Terima kasih', nama, 'Kehadiran direkodkan'), [
+        kel ? 'Kehadiran anda bersama ' + kel + ' bagi sesi ini telah direkodkan.' : 'Kehadiran anda bagi sesi ini telah direkodkan.',
+        'Selamat mengikuti program sekeluarga.'
+      ], 'Selepas sesi, wakil keluarga boleh mengimbas kod QR maklum balas untuk berkongsi pandangan.', S.ahli ? 'hati' : null);
+    }
     if (S.ahli) {
       return skrinSelesai(tajukNama('Terima kasih', nama, 'Kehadiran direkodkan'), [
         'Terima kasih kerana hadir dan menyokong program ini sebagai Ahli IKRAM.',
