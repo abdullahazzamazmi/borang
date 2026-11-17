@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-RI84zd2ljwyc6OZj9rGBdsSwbFd4XlFOpikCaRNAppw='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-s2hywvcPnq03IpH1IIssm1XGkFTIOjFc3oVnnnH6VbU='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -283,6 +283,15 @@
   .nota-had { color: var(--aksen-teks); font-weight: 600; }
   @media (prefers-reduced-motion: reduce) { .figura.muncul svg { animation: none; } }
 
+  /* Check-in pautan peribadi (v1.12.0) */
+  .baris-hadir { align-items: center; }
+  .baris-hadir.tetap { cursor: default; background: var(--latar); }
+  .teks-hadir { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .teg-sudah { font-size: 12px; font-weight: 700; color: var(--aksen-teks); background: var(--utama-lembut); padding: 2px 8px; border-radius: 999px; }
+  .btn-semua { margin-top: 4px; min-height: 40px; font-size: 14px; justify-content: flex-start; padding-left: 0; }
+  .tambah-lain { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--sempadan); }
+  .tambah-lain .btn { margin-top: 6px; }
+
   .perangkap { position: absolute !important; left: -10000px !important; width: 1px; height: 1px; overflow: hidden; }
 
   .pemutar {
@@ -491,7 +500,7 @@
     var p = {};
     try {
       var q = new URLSearchParams(window.location.search);
-      ['t', 'k', 's'].forEach(function (n) { if (q.has(n)) p[n] = q.get(n); });
+      ['t', 'k', 's', 'p'].forEach(function (n) { if (q.has(n)) p[n] = q.get(n); });
     } catch (e) { /* abaikan */ }
     cb(p);
   }
@@ -524,10 +533,10 @@
     if (!S.cfg || !S.cfg.sesi) return null;
     var x = S.cfg.sesi;
     return h('section', { 'class': 'kad info-sesi' }, [
-      h('div', { 'class': 'label', text: ({ checkin: 'Daftar kehadiran', pradaftar: 'Pendaftaran awal program', maklumbalas: 'Maklum balas program' })[S.t] || '' }),
+      h('div', { 'class': 'label', text: ({ checkin: 'Daftar kehadiran', hadir: 'Daftar kehadiran', pradaftar: 'Pendaftaran awal program', maklumbalas: 'Maklum balas program' })[S.t] || '' }),
       h('div', { 'class': 'program', text: x.program }),
       h('p', { 'class': 'sesi', text: x.sesi }),
-      (x.bahagian || x.tarikh || x.masa) ? h('div', { 'class': 'masa', text: [x.bahagian, x.tarikh, x.masa].filter(Boolean).join(' · ') }) : null
+      (x.tarikh || x.masa) ? h('div', { 'class': 'masa', text: [x.tarikh, x.masa].filter(Boolean).join(' · ') }) : null
     ]);
   }
 
@@ -994,7 +1003,7 @@
 
     // --- Hubungan wakil (v1.11.0) ---
     var wHubWakil = null;
-    if (hubungan) {
+    if (hubungan && !opt.tanpaHubunganWakil) {
       var selW = pilihanSelect('hubungan_wakil', hubungan, st.hubungan_wakil || '');
       selW.addEventListener('change', function () { st.hubungan_wakil = selW.value; if (selW.value) tandaSalah(wHubWakil, false); });
       wHubWakil = medan('Hubungan anda dalam keluarga', selW, { wajib: true, bantuan: 'Contoh: bapa, ibu, datuk atau penjaga.', mesej: 'Sila pilih hubungan anda dalam keluarga.' });
@@ -1137,7 +1146,7 @@
         setuju_penjaga: st.anak.length > 0 && cbPenjaga.checked,
         izin_dewasa: st.dewasa.length > 0 && cbIzin.checked
       };
-      if (hubungan) keluarga.hubungan_wakil = st.hubungan_wakil;
+      if (hubungan && !opt.tanpaHubunganWakil) keluarga.hubungan_wakil = st.hubungan_wakil;
       opt.onHantar(keluarga, btn, kotak, tandaPerlu);
     });
 
@@ -1405,7 +1414,7 @@
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           if (res.data.langkah === 'PROFIL') { S.wakilBaharu = true; return checkinProfil(); }
-          if (res.data.langkah === 'KELUARGA') { S.wakilBaharu = false; return checkinKeluarga(); }
+          if (res.data.langkah === 'KELUARGA') { S.wakilBaharu = false; S.adaPautan = !!res.data.adaPautan; return checkinKeluarga(); }
           checkinSelesai(res.data.nama);
         });
       }
@@ -1439,7 +1448,9 @@
       pengenalan: S.cfg.pradaftarSahaja
         ? 'Masukkan ahli keluarga yang anda daftarkan semasa pra-daftar dan hadir hari ini. Gunakan emel yang sama bagi setiap dewasa.'
         : 'Masukkan emel setiap dewasa yang hadir. Bagi anak, hanya umur dan jantina.',
-      nota: 'Sudah check-in tadi? Isi senarai penuh sekali lagi. Sesiapa yang telah direkod tidak akan dikira dua kali.',
+      nota: S.adaPautan
+        ? 'Lebih mudah: buka pautan check-in dalam emel pengesahan atau peringatan pra-daftar anda. Senarai keluarga anda akan dipaparkan untuk ditanda.'
+        : 'Sudah check-in tadi? Isi senarai penuh sekali lagi. Sesiapa yang telah direkod tidak akan dikira dua kali.',
       langkah: S.wakilBaharu ? 'Langkah 3' : 'Langkah 2',
       butangLabel: 'Rekod kehadiran',
       kembali: S.wakilBaharu ? checkinProfil : checkinEmel,
@@ -1719,6 +1730,119 @@
     papar(kadSesi(), h('section', { 'class': 'kad' }, anak));
   }
 
+
+  // -------------------------------------------------------------------------
+  // E) Check-in melalui pautan peribadi (v1.12.0): ?t=hadir&p=<token>
+  // -------------------------------------------------------------------------
+
+  /** Label baris senarai (data daripada pelayan dipaparkan dengan textContent sahaja). */
+  function labelDewasa(d) { return (d.hubungan || 'Dewasa') + (d.nama ? ' — ' + d.nama : ''); }
+  function labelAnak(a) { return 'Anak · ' + a.jantina + ', ' + (Number(a.umur) === 0 ? 'bawah setahun' : a.umur + ' tahun'); }
+
+  function mulaHadir() {
+    setSubjudul('Daftar Kehadiran');
+    var x = S.cfg.peribadi;
+    S.hadirPilih = S.hadirPilih || { dewasa: {}, anak: {} };
+    var pilih = S.hadirPilih;
+    var kotak = kotakRalat();
+    var btn = butang('Rekod kehadiran', { type: 'submit' });
+
+    function baris(teks, sudah, kunci, i, wajib) {
+      var cb = h('input', { attrs: { type: 'checkbox' } });
+      cb.checked = !!(sudah || wajib || (kunci && pilih[kunci][i]));
+      cb.disabled = !!(sudah || wajib);
+      if (kunci && !cb.disabled) cb.addEventListener('change', function () { pilih[kunci][i] = cb.checked; kira(); });
+      return h('label', { 'class': 'baris-pil baris-hadir' + (cb.disabled ? ' tetap' : '') }, [
+        cb,
+        h('span', { 'class': 'teks-hadir' }, [
+          h('span', { text: teks }),
+          sudah ? h('span', { 'class': 'teg-sudah', text: 'Sudah direkod' }) : null
+        ])
+      ]);
+    }
+
+    var senarai = h('div', { 'class': 'senarai-pil' }, [baris('Anda (wakil)', x.wakilSudah, null, 0, true)]);
+    x.dewasa.forEach(function (d, i) { senarai.appendChild(baris(labelDewasa(d), d.sudah, 'dewasa', i)); });
+    x.anak.forEach(function (a, i) { senarai.appendChild(baris(labelAnak(a), a.sudah, 'anak', i)); });
+
+    var adaPilihan = x.dewasa.some(function (d) { return !d.sudah; }) || x.anak.some(function (a) { return !a.sudah; });
+    var btnSemua = adaPilihan ? butang('Tanda semua', { kelas: 'btn-pautan btn-semua', klik: function () {
+      x.dewasa.forEach(function (d, i) { if (!d.sudah) pilih.dewasa[i] = true; });
+      x.anak.forEach(function (a, i) { if (!a.sudah) pilih.anak[i] = true; });
+      mulaHadir();
+    } }) : null;
+
+    function dipilih(kunci, arr) { return arr.map(function (_, i) { return i; }).filter(function (i) { return !arr[i].sudah && pilih[kunci][i]; }); }
+    function kira() {
+      var n = 1 + dipilih('dewasa', x.dewasa).length + dipilih('anak', x.anak).length;
+      btn._teks = n > 1 ? 'Rekod kehadiran (' + n + ' orang)' : 'Rekod kehadiran';
+      btn._label.textContent = btn._teks;
+    }
+    function payload() {
+      return { p: S.p, versi: x.versi, dewasa: dipilih('dewasa', x.dewasa), anak: dipilih('anak', x.anak), laman: nilaiPerangkap() };
+    }
+
+    var tambah = null;
+    if (S.cfg.bolehTambah) {
+      tambah = h('div', { 'class': 'tambah-lain' }, [
+        h('p', { 'class': 'bantuan', text: 'Ada ahli keluarga yang datang tetapi tiada dalam senarai pra-daftar?' }),
+        butang('Tambah ahli lain', { kelas: 'btn-garis', klik: hadirTambah })
+      ]);
+    }
+
+    var form = h('form', { attrs: { novalidate: true } }, [
+      h('h1', { text: tajukNama('Assalamualaikum', x.nama, 'Rekod kehadiran') }),
+      h('p', { 'class': 'redup', text: x.keluarga
+        ? 'Tandakan ahli keluarga yang hadir bersama anda hari ini. Biarkan kosong bagi yang tidak hadir.'
+        : 'Tekan butang di bawah untuk merekod kehadiran anda bagi sesi ini.' }),
+      x.keluarga ? h('div', { 'class': 'medan' }, [senarai, btnSemua]) : null,
+      tambah, perangkap(), kotak, btn
+    ]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      sorokRalat(kotak);
+      sibuk(btn, true);
+      panggil('apiHadirHantar', payload()).then(function (res) {
+        sibuk(btn, false);
+        if (res.status !== 'ok') return urusRalat(res, kotak);
+        hadirSelesai(res.data);
+      });
+    });
+    kira();
+    papar(kadSesi(), h('section', { 'class': 'kad' }, [form]));
+  }
+
+  /** Ahli tambahan: langkah keluarga biasa (tanpa hubungan wakil), dihantar bersama senarai yang ditanda. */
+  function hadirTambah() {
+    var x = S.cfg.peribadi;
+    var p = S.hadirPilih;
+    skrinKeluarga({
+      tajuk: 'Tambah ahli keluarga lain',
+      pengenalan: 'Masukkan ahli keluarga yang hadir tetapi TIADA dalam senarai pra-daftar anda. Yang telah anda tanda akan direkod bersama.',
+      langkah: 'Ahli tambahan',
+      tanpaHubunganWakil: true,
+      butangLabel: 'Rekod kehadiran',
+      kembali: mulaHadir,
+      onHantar: function (keluarga, btn, kotak, tandaPerlu) {
+        var payload = {
+          p: S.p, versi: x.versi, keluarga: keluarga, laman: nilaiPerangkap(),
+          dewasa: x.dewasa.map(function (_, i) { return i; }).filter(function (i) { return !x.dewasa[i].sudah && p.dewasa[i]; }),
+          anak: x.anak.map(function (_, i) { return i; }).filter(function (i) { return !x.anak[i].sudah && p.anak[i]; })
+        };
+        hantarKeluarga('apiHadirHantar', payload, btn, kotak, tandaPerlu, hadirSelesai);
+      }
+    });
+  }
+
+  function hadirSelesai(d) {
+    S.hadirPilih = null;
+    var bil = Number(d.bil) || 1;
+    skrinSelesai(tajukNama('Terima kasih', d.nama, 'Kehadiran direkodkan'), [
+      bil > 1 ? 'Kehadiran ' + bil + ' orang bagi sesi ini telah direkodkan.' : 'Kehadiran anda bagi sesi ini telah direkodkan.',
+      'Selamat mengikuti program.'
+    ], 'Jika ada ahli yang datang lewat, buka semula pautan ini dan tandakan mereka. Yang telah direkod tidak akan dikira dua kali.');
+  }
+
   // -------------------------------------------------------------------------
   // Mula
   // -------------------------------------------------------------------------
@@ -1728,14 +1852,16 @@
       S.t = String(p.t || '').toLowerCase();
       S.k = String(p.k || '');
       S.s = String(p.s || '');
-      if (['daftar', 'pradaftar', 'checkin', 'maklumbalas'].indexOf(S.t) === -1) return skrinRalat();
+      S.p = String(p.p || '');   // v1.12.0: token pautan peribadi (memori sahaja)
+      if (['daftar', 'pradaftar', 'checkin', 'maklumbalas', 'hadir'].indexOf(S.t) === -1) return skrinRalat();
 
-      panggil('apiMula', { t: S.t, k: S.k, s: S.s }).then(function (res) {
+      panggil('apiMula', { t: S.t, k: S.k, s: S.s, p: S.p }).then(function (res) {
         if (res.status !== 'ok') return skrinRalat(res.message);
         S.cfg = res.data;
         if (S.t === 'daftar') return mulaDaftar();
         if (S.t === 'pradaftar') return mulaPradaftar();
         if (S.t === 'checkin') return mulaCheckin();
+        if (S.t === 'hadir') return mulaHadir();
         mulaMaklumBalas();
       });
     });
