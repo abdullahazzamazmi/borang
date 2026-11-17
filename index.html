@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Oqwji0Ggw8kighAFOgou8MygZeqpl75PZPPzoE0ntJk='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-FaYwcRyLyC6aaPlrX+WxYGfCP+nqwi5Slsza0fhNW3k=' https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style; img-src data:; frame-src https://accounts.google.com/gsi/; connect-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -302,6 +302,16 @@
   @media (prefers-reduced-motion: reduce) { .pemutar, .pemutar-kecil { animation-duration: 3s; } }
   @media (min-width: 600px) { .bekas { padding-top: 28px; } .kad { padding: 26px 26px; } }
 .input-semak { font-size: 1.5rem; letter-spacing: .5em; text-align: center; max-width: 9rem; font-variant-numeric: tabular-nums; }
+.blok-google { margin: 4px 0 18px; }
+.google-slot { display: flex; justify-content: center; min-height: 44px; }
+.google-status:empty { display: none; }
+.google-status { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--utama-lembut); }
+.google-akaun { display: flex; align-items: center; gap: 8px; font-weight: 600; word-break: break-all; }
+.tanda-ok { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #1e7b4a; color: #fff; font-size: .8rem; flex: none; }
+.google-status .btn-pautan { padding-left: 0; }
+.atau { display: flex; align-items: center; gap: 12px; margin-top: 16px; color: var(--redup); font-size: .9rem; }
+.atau::before, .atau::after { content: ''; flex: 1; height: 1px; background: var(--sempadan); }
+.medan.dikunci input { background: var(--latar); color: var(--redup); }
 </style>
 </head>
 <body>
@@ -456,6 +466,8 @@
   var RALAT_RANGKAIAN = { status: 'error', code: 'RANGKAIAN', message: 'Sambungan terputus. Sila semak internet anda dan cuba semula.' };
 
   function panggil(fn, payload) {
+    // v1.14.0: log masuk Google → ID token dihantar bersama; pelayan mengesahkan dan mengambil emel daripadanya.
+    if (S.gtoken) payload = Object.assign({}, payload || {}, { gtoken: S.gtoken });
     if (MOD_STATIK) return panggilStatik(fn, payload);
     return new Promise(function (lulus) {
       google.script.run
@@ -509,6 +521,10 @@
   /** Kendalikan ralat: pautan tidak sah → skrin penuh; lain-lain → kotak ralat. */
   function urusRalat(res, kotak) {
     if (res.code === 'TIDAK_SAH') return skrinRalat(res.message);
+    if (res.code === 'GOOGLE_TAMAT') {   // v1.14.0: token Google tamat → log masuk semula dari awal borang
+      S.gtoken = null; S.emelGoogle = null;
+      return skrinLogMasukSemula(res.message);
+    }
     if (res.code === 'SEMAK_TAMAT') {   // v1.13.0: sesi semakan QR tamat → mula semula dari emel
       S.qrSemak = null; S.hadirPilih = null;
       checkinEmel();
@@ -616,6 +632,48 @@
   }
 
   /** Langkah emel. onHantar(emel, btn, kotak) */
+  // -------------------------------------------------------------------------
+  // v1.14.0: Log masuk dengan Google (halaman statik sahaja)
+  // -------------------------------------------------------------------------
+
+  function adaGoogle() { return !!(MOD_STATIK && S.cfg && S.cfg.google); }
+
+  var gisStatus = '';   // '' | 'muat' | 'sedia' | 'gagal'
+  var gisMenunggu = [];
+  function muatGis(cb) {
+    if (gisStatus === 'sedia') return cb(true);
+    if (gisStatus === 'gagal') return cb(false);
+    gisMenunggu.push(cb);
+    if (gisStatus === 'muat') return;
+    gisStatus = 'muat';
+    var sk = document.createElement('script');
+    sk.src = 'https://accounts.google.com/gsi/client';
+    sk.async = true;
+    var selesai = function (ok) { gisStatus = ok ? 'sedia' : 'gagal'; var q = gisMenunggu; gisMenunggu = []; q.forEach(function (f) { f(ok); }); };
+    sk.onload = function () { selesai(!!(window.google && google.accounts && google.accounts.id)); };
+    sk.onerror = function () { selesai(false); };
+    document.head.appendChild(sk);
+  }
+
+  /** Emel daripada ID token (paparan sahaja; pelayan mengesahkan token sebenar). */
+  function emelDariToken(t) {
+    try {
+      var b = String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (b.length % 4) b += '=';
+      var d = JSON.parse(decodeURIComponent(Array.prototype.map.call(atob(b), function (c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join('')));
+      return d && d.email && d.email_verified !== false ? String(d.email).toLowerCase() : '';
+    } catch (e) { return ''; }
+  }
+
+  function skrinLogMasukSemula(mesej) {
+    papar(h('section', { 'class': 'kad tengah' }, [
+      ikon('amaran', 'ralat'),
+      h('h1', { text: 'Sila log masuk semula' }),
+      h('p', { 'class': 'redup', text: mesej || 'Sesi log masuk Google telah tamat.' }),
+      butang('Mula semula', { klik: function () { mula(); } })
+    ]));
+  }
+
   function skrinEmel(opt) {
     var kotak = kotakRalat();
     var inp = h('input', { attrs: { type: 'email', id: 'emel', name: 'emel', autocomplete: 'email', inputmode: 'email', maxlength: '254', autocapitalize: 'off', spellcheck: 'false' } });
@@ -623,11 +681,59 @@
     var w = medan('Alamat emel', inp, { wajib: true, bantuan: opt.bantuan, mesej: 'Sila masukkan alamat emel yang sah.' });
     var btn = butang('Teruskan', { type: 'submit' });
     var tambahan = opt.tambahan ? opt.tambahan() : null;   // v1.10.0: { el, sah() } contoh persetujuan perkongsian
-    var form = h('form', { attrs: { novalidate: true } }, [
+
+    // v1.14.0: "Teruskan dengan Google" — emel diambil daripada akaun Google (tidak ditaip).
+    var blokGoogle = null;
+    var form;
+    if (adaGoogle()) {
+      var slot = h('div', { 'class': 'google-slot' });
+      var status = h('div', { 'class': 'google-status' });
+      var atau = h('div', { 'class': 'atau' }, [h('span', { text: 'atau taip emel anda' })]);
+      blokGoogle = h('div', { 'class': 'blok-google' }, [slot, status, atau]);
+
+      var kunci = function (emel) {
+        inp.value = emel;
+        inp.readOnly = true;
+        w.classList.add('dikunci');
+        slot.hidden = true;
+        atau.hidden = true;
+        status.textContent = '';
+        status.appendChild(h('span', { 'class': 'google-akaun' }, [h('span', { 'class': 'tanda-ok', text: '✓' }), h('span', { text: 'Log masuk sebagai ' + emel })]));
+        status.appendChild(butang('Guna emel lain', { kelas: 'btn-pautan', klik: buka }));
+      };
+      var buka = function () {
+        S.gtoken = null; S.emelGoogle = null;
+        try { google.accounts.id.disableAutoSelect(); } catch (e) { /* abaikan */ }
+        inp.readOnly = false;
+        inp.value = '';
+        w.classList.remove('dikunci');
+        status.textContent = '';
+        slot.hidden = false;
+        atau.hidden = false;
+        inp.focus();
+      };
+      var terima = function (cred) {
+        var emel = emelDariToken(cred);
+        if (!emel) { tunjukRalat(kotak, 'Log masuk Google tidak berjaya. Cuba lagi atau taip emel anda.'); return; }
+        S.gtoken = cred;
+        S.emelGoogle = emel;
+        kunci(emel);
+        sorokRalat(kotak);
+        if (form.requestSubmit) form.requestSubmit(); else btn.click();
+      };
+      if (S.gtoken && S.emelGoogle) kunci(S.emelGoogle);
+      muatGis(function (ok) {
+        if (!ok) { blokGoogle.hidden = true; return; }
+        google.accounts.id.initialize({ client_id: S.cfg.google, callback: function (r) { terima(r && r.credential); }, auto_select: false, ux_mode: 'popup', itp_support: true });
+        google.accounts.id.renderButton(slot, { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', logo_alignment: 'center', locale: 'ms', width: Math.max(220, Math.min(400, slot.clientWidth || 320)) });
+      });
+    }
+
+    form = h('form', { attrs: { novalidate: true } }, [
       h('div', { 'class': 'langkah', text: opt.langkah || 'Langkah 1' }),
       h('h1', { text: opt.tajuk }),
       opt.pengenalan ? h('p', { 'class': 'redup', text: opt.pengenalan }) : null,
-      w, tambahan ? tambahan.el : null, perangkap(), kotak, btn
+      blokGoogle, w, tambahan ? tambahan.el : null, perangkap(), kotak, btn
     ]);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -640,7 +746,7 @@
       opt.onHantar(v, btn, kotak);
     });
     papar(kadSesi(), h('section', { 'class': 'kad' }, [form, opt.kembali ? butang('Kembali', { kelas: 'btn-pautan', klik: opt.kembali }) : null]));
-    setTimeout(function () { inp.focus(); }, 50);
+    if (!blokGoogle) setTimeout(function () { inp.focus(); }, 50);
   }
 
   /**
@@ -1423,6 +1529,7 @@
           if (res.status !== 'ok') return urusRalat(res, kotak);
           if (res.data.langkah === 'PROFIL') { S.wakilBaharu = true; return checkinProfil(); }
           if (res.data.langkah === 'SEMAK') { S.wakilBaharu = false; S.semakDikunci = false; return checkinSemak(res.data.jenis); }
+          if (res.data.langkah === 'SENARAI') { S.wakilBaharu = false; return bukaSenaraiQr(res.data); }   // v1.14.0: log masuk Google
           if (res.data.langkah === 'KELUARGA') {
             S.wakilBaharu = false; S.adaPautan = !!res.data.adaPautan; S.semakDikunci = !!res.data.dikunci;
             return checkinKeluarga();
@@ -1513,13 +1620,7 @@
       sibuk(btn, true);
       panggil('apiCheckinSemak', { k: S.k, emel: S.emel, jawapan: v, laman: nilaiPerangkap() }).then(function (res) {
         sibuk(btn, false);
-        if (res.status === 'ok') {
-          S.qrSemak = res.data.s;   // memori sahaja; tamat 10 minit di pelayan
-          S.cfg.peribadi = res.data.peribadi;
-          S.cfg.bolehTambah = !!res.data.bolehTambah;
-          S.hadirPilih = null;
-          return mulaHadir();
-        }
+        if (res.status === 'ok') return bukaSenaraiQr(res.data);
         if (res.code === 'DIKUNCI') { S.semakDikunci = true; S.adaPautan = false; return checkinKeluarga(); }
         inp.value = '';
         inp.focus();
@@ -1528,6 +1629,15 @@
     });
     papar(kadSesi(), h('section', { 'class': 'kad' }, [form, manual, butang('Kembali', { kelas: 'btn-pautan', klik: checkinEmel })]));
     setTimeout(function () { inp.focus(); }, 50);
+  }
+
+  /** Senarai keluarga untuk ditanda (selepas semakan ringkas atau log masuk Google). */
+  function bukaSenaraiQr(d) {
+    S.qrSemak = d.s;   // memori sahaja; tamat 10 minit di pelayan
+    S.cfg.peribadi = d.peribadi;
+    S.cfg.bolehTambah = !!d.bolehTambah;
+    S.hadirPilih = null;
+    mulaHadir();
   }
 
   function checkinSelesai(nama) {
