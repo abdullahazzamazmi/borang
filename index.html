@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-/7I6NwOGf6gm6OC4ffp5W+mACtKiwXr9fpfsZCYi3F8='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-RI84zd2ljwyc6OZj9rGBdsSwbFd4XlFOpikCaRNAppw='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -527,7 +527,7 @@
       h('div', { 'class': 'label', text: ({ checkin: 'Daftar kehadiran', pradaftar: 'Pendaftaran awal program', maklumbalas: 'Maklum balas program' })[S.t] || '' }),
       h('div', { 'class': 'program', text: x.program }),
       h('p', { 'class': 'sesi', text: x.sesi }),
-      (x.tarikh || x.masa) ? h('div', { 'class': 'masa', text: [x.tarikh, x.masa].filter(Boolean).join(' · ') }) : null
+      (x.bahagian || x.tarikh || x.masa) ? h('div', { 'class': 'masa', text: [x.bahagian, x.tarikh, x.masa].filter(Boolean).join(' · ') }) : null
     ]);
   }
 
