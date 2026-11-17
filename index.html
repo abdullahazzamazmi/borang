@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-J0mIgq/X5oO4D7Vcqm4DTtCtER99bZfu+MLulUBiZ3o='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-/7I6NwOGf6gm6OC4ffp5W+mACtKiwXr9fpfsZCYi3F8='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -191,6 +191,8 @@
     max-height: 220px; overflow-y: auto; white-space: pre-line; font-size: 14px; line-height: 1.55;
     background: var(--latar); border: 1px solid var(--sempadan); border-radius: 10px; padding: 12px 14px;
   }
+  .medan.salah > .setuju { border-color: var(--ralat); }
+  .notis-kongsi { max-height: none; background: var(--utama-lembut); border-color: transparent; }
   .versi-notis { font-size: 12px; color: var(--redup); margin-top: 4px; }
 
   /* Soalan maklum balas */
@@ -335,7 +337,8 @@
     keluarga: null,     // v1.9.0: keluarga yang DIHANTAR (untuk mesej selesai) — memori sahaja
     kelUI: null,        // v1.9.0: keadaan langkah keluarga (isian dewasa/anak) — memori sahaja
     wakilBaharu: false, // v1.9.0: wakil emel baharu → profil dihantar bersama keluarga
-    minatWakil: null
+    minatWakil: null,
+    setujuKongsi: false // v1.10.0: persetujuan perkongsian (program kerjasama) — memori sahaja
   };
   var app = document.getElementById('app');
 
@@ -602,11 +605,12 @@
     inp.value = S.emel || '';
     var w = medan('Alamat emel', inp, { wajib: true, bantuan: opt.bantuan, mesej: 'Sila masukkan alamat emel yang sah.' });
     var btn = butang('Teruskan', { type: 'submit' });
+    var tambahan = opt.tambahan ? opt.tambahan() : null;   // v1.10.0: { el, sah() } contoh persetujuan perkongsian
     var form = h('form', { attrs: { novalidate: true } }, [
       h('div', { 'class': 'langkah', text: opt.langkah || 'Langkah 1' }),
       h('h1', { text: opt.tajuk }),
       opt.pengenalan ? h('p', { 'class': 'redup', text: opt.pengenalan }) : null,
-      w, perangkap(), kotak, btn
+      w, tambahan ? tambahan.el : null, perangkap(), kotak, btn
     ]);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -614,6 +618,7 @@
       var v = inp.value.trim().toLowerCase();
       if (!emelSah(v)) { tandaSalah(w, true); inp.focus(); return; }
       tandaSalah(w, false);
+      if (tambahan && !tambahan.sah()) return;
       S.emel = v;
       opt.onHantar(v, btn, kotak);
     });
@@ -684,7 +689,8 @@
     ]);
 
     // Notis PDPA + persetujuan
-    var teksNotis = cfg.pdpa.teks + (cfg.keluarga && cfg.keluarga.notis ? '\n\n' + cfg.keluarga.notis : '');
+    var teksNotis = cfg.pdpa.teks + (cfg.keluarga && cfg.keluarga.notis ? '\n\n' + cfg.keluarga.notis : '') +
+      (cfg.kongsi ? '\n\n' + cfg.kongsi.teks : '');
     var notis = h('div', { 'class': 'notis', text: teksNotis, attrs: { tabindex: '0', role: 'region', 'aria-label': 'Notis privasi' } });
     var cbPdpa = h('input', { attrs: { type: 'checkbox', id: 'pdpa' } });
     cbPdpa.checked = !!d.persetujuan_pdpa;
@@ -814,8 +820,6 @@
     return f;
   }
 
-  function emelSah(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e); }
-
   /**
    * Langkah keluarga (langkah terakhir, selepas emel/profil wakil).
    * opt: { tajuk, pengenalan, langkah, nota, butangLabel, kembali, onHantar(keluarga, btn, kotak, tandaPerlu) }
@@ -828,7 +832,8 @@
     var umurMaks = kf.umurMaksAnak;
     var umurMinDewasa = kf.umurMinDewasa || 18;
     var hariIni = /^\d{4}-\d{2}-\d{2}$/.test(cfg.hariIni || '') ? cfg.hariIni : isoHariIni();
-    var st = S.kelUI || (S.kelUI = { dewasa: [], anak: [], setuju_penjaga: false, izin_dewasa: false });
+    var st = S.kelUI || (S.kelUI = { dewasa: [], anak: [], setuju_penjaga: false, izin_dewasa: false, hubungan_wakil: '' });
+    var hubungan = kf.hubungan || null;   // v1.11.0: tiada → medan tidak dipaparkan (backend fail-closed)
     var kiraLalu = { dewasa: st.dewasa.length, anak: st.anak.length };
     var uid = 0;
     var kotak = kotakRalat();
@@ -852,7 +857,7 @@
     btnDewasa.insertBefore(h('span', { 'class': 'tanda-tambah', text: '+', attrs: { 'aria-hidden': 'true' } }), btnDewasa.firstChild);
     btnDewasa.addEventListener('click', function () {
       if (jumlah() >= maks) return;
-      st.dewasa.push({ emel: '', butiran: false, profil: {}, ahli: false });
+      st.dewasa.push({ emel: '', butiran: false, profil: {}, ahli: false, hubungan: '' });
       kemas();
       var akhir = senaraiDewasa.lastChild && senaraiDewasa.lastChild.querySelector('input[type=email]');
       if (akhir) akhir.focus();
@@ -874,6 +879,12 @@
       w.emel = medanKecil('Emel', emel, { wajib: true, bantuan: 'Emel milik dewasa ini sendiri, bukan emel anda.', mesej: 'Masukkan emel yang sah.' });
 
       var badan = [w.emel];
+      if (hubungan) {
+        var selH = pilihanSelect('hubungan-dewasa-' + uid, hubungan, d.hubungan || '');
+        selH.addEventListener('change', function () { d.hubungan = selH.value; if (selH.value) tandaSalah(w.hubungan, false); });
+        w.hubungan = medanKecil('Hubungan dalam keluarga', selH, { wajib: true, mesej: 'Sila pilih hubungan dewasa ini dalam keluarga.' });
+        badan.push(w.hubungan);
+      }
       if (d.butiran) {
         var p = d.profil;
         var nama = h('input', { attrs: { type: 'text', id: 'nama-dewasa-' + uid, autocomplete: 'off', maxlength: '100', autocapitalize: 'words' } });
@@ -981,6 +992,14 @@
 
     var notaHad = h('p', { 'class': 'bantuan nota-had', text: 'Had ' + maks + ' ahli keluarga bagi setiap pendaftaran telah dicapai.' });
 
+    // --- Hubungan wakil (v1.11.0) ---
+    var wHubWakil = null;
+    if (hubungan) {
+      var selW = pilihanSelect('hubungan_wakil', hubungan, st.hubungan_wakil || '');
+      selW.addEventListener('change', function () { st.hubungan_wakil = selW.value; if (selW.value) tandaSalah(wHubWakil, false); });
+      wHubWakil = medan('Hubungan anda dalam keluarga', selW, { wajib: true, bantuan: 'Contoh: bapa, ibu, datuk atau penjaga.', mesej: 'Sila pilih hubungan anda dalam keluarga.' });
+    }
+
     var wDewasa = h('div', { 'class': 'medan' }, [
       h('div', { 'class': 'tajuk-medan', text: 'Dewasa' }),
       h('div', { 'class': 'bantuan', text: 'Pasangan, ibu bapa, datuk, nenek atau dewasa lain yang datang bersama. Jangan masukkan diri anda.' }),
@@ -996,7 +1015,7 @@
     var cbIzin = h('input', { attrs: { type: 'checkbox', id: 'izin_dewasa' } });
     cbIzin.checked = !!st.izin_dewasa;
     cbIzin.addEventListener('change', function () { st.izin_dewasa = cbIzin.checked; if (cbIzin.checked) tandaSalah(wIzin, false); });
-    var notisPenuh = cfg.pdpa.teks + (kf.notis ? '\n\n' + kf.notis : '');
+    var notisPenuh = cfg.pdpa.teks + (kf.notis ? '\n\n' + kf.notis : '') + (cfg.kongsi ? '\n\n' + cfg.kongsi.teks : '');
     var wIzin = h('div', { 'class': 'medan' }, [
       h('label', { 'class': 'setuju amaran', attrs: { 'for': 'izin_dewasa' } }, [cbIzin,
         h('span', { text: 'Saya mendapat izin setiap dewasa yang disenaraikan untuk berkongsi maklumat mereka, dan mereka bersetuju dengan notis privasi IKRAM.' })]),
@@ -1038,6 +1057,7 @@
       var tanda = function (w, salah, mesej) { tandaSalah(w, salah, mesej); if (salah && !pertama) pertama = w; };
       var dilihat = {};
       dilihat[String(S.emel || '').toLowerCase()] = 'emel anda';
+      if (wHubWakil) tanda(wHubWakil, !st.hubungan_wakil);
       Array.prototype.forEach.call(senaraiDewasa.children, function (kad, i) {
         var d = kad._d, w = kad._w;
         var e = d.emel;
@@ -1045,6 +1065,7 @@
         else if (dilihat[e]) tanda(w.emel, true, 'Emel ini sama dengan ' + dilihat[e] + '. Setiap dewasa perlu emel sendiri.');
         else tanda(w.emel, false);
         if (e) dilihat[e] = dilihat[e] || ('emel Dewasa ' + (i + 1));
+        if (w.hubungan) tanda(w.hubungan, !d.hubungan);
         if (d.butiran) {
           var p = d.profil;
           var telB = String(p.telefon || '').replace(/[\s\-().]/g, '');
@@ -1088,7 +1109,7 @@
       h('p', { 'class': 'redup', text: opt.pengenalan }),
       h('div', { 'class': 'panel-keluarga' }, [barisan, ringkasan]),
       opt.nota ? h('p', { 'class': 'bantuan nota-imbas', text: opt.nota }) : null,
-      wDewasa, wAnak, wIzin, wPenjaga, perangkap(), kotak, btn
+      wHubWakil, wDewasa, wAnak, wIzin, wPenjaga, perangkap(), kotak, btn
     ]);
 
     form.addEventListener('submit', function (e) {
@@ -1103,6 +1124,7 @@
       var keluarga = {
         dewasa: st.dewasa.map(function (d) {
           var o = { emel: d.emel, ahli: !!d.ahli };
+          if (hubungan) o.hubungan = d.hubungan;
           if (d.butiran) {
             o.profil = {
               nama: String(d.profil.nama || '').trim(), telefon: String(d.profil.telefon || '').trim(),
@@ -1115,6 +1137,7 @@
         setuju_penjaga: st.anak.length > 0 && cbPenjaga.checked,
         izin_dewasa: st.dewasa.length > 0 && cbIzin.checked
       };
+      if (hubungan) keluarga.hubungan_wakil = st.hubungan_wakil;
       opt.onHantar(keluarga, btn, kotak, tandaPerlu);
     });
 
@@ -1219,6 +1242,31 @@
     });
   }
 
+  /**
+   * v1.10.0 — Persetujuan perkongsian bagi program kerjasama (contoh LPPKN). Dipaparkan pada langkah
+   * emel pra-daftar supaya semua laluan (emel sedia ada / baharu / keluarga) melaluinya.
+   * Backend menolak pra-daftar tanpa setuju_kongsi === true.
+   */
+  function blokKongsi() {
+    var k = S.cfg.kongsi;
+    if (!k) return null;
+    var cb = h('input', { attrs: { type: 'checkbox', id: 'setuju_kongsi' } });
+    cb.checked = !!S.setujuKongsi;
+    var w = h('div', { 'class': 'medan' }, [
+      h('div', { 'class': 'notis notis-kongsi', text: k.teks }),
+      h('label', { 'class': 'setuju', attrs: { 'for': 'setuju_kongsi' } }, [cb,
+        h('span', { text: adaKeluarga()
+          ? 'Saya bersetuju maklumat saya dan ahli keluarga yang saya daftarkan dikongsi dengan ' + k.rakan + ' bagi program ini.'
+          : 'Saya bersetuju maklumat saya dikongsi dengan ' + k.rakan + ' bagi program ini.' })]),
+      h('div', { 'class': 'mesej-medan', text: 'Persetujuan ini diperlukan untuk mendaftar program kerjasama ini.' })
+    ]);
+    cb.addEventListener('change', function () { S.setujuKongsi = cb.checked; if (cb.checked) tandaSalah(w, false); });
+    return { el: w, sah: function () { var ok = cb.checked; tandaSalah(w, !ok); if (!ok) w.scrollIntoView({ behavior: 'smooth', block: 'center' }); S.setujuKongsi = ok; return ok; } };
+  }
+
+  /** Tambah setuju_kongsi pada payload pra-daftar (program kerjasama sahaja). */
+  function denganKongsi(p) { if (S.cfg.kongsi) p.setuju_kongsi = !!S.setujuKongsi; return p; }
+
   function pradaftarLangkahPertama() { S.kelUI = null; S.wakilBaharu = false; return pradaftarEmel(); }
 
   function pradaftarEmel() {
@@ -1229,9 +1277,10 @@
         : 'Peringatan program akan dihantar ke emel ini.',
       langkah: 'Langkah 1',
       kembali: mulaPradaftar,
+      tambahan: blokKongsi,
       onHantar: function (emel, btn, kotak) {
         sibuk(btn, true);
-        panggil('apiPradaftarEmel', { k: S.k, s: S.s, emel: emel, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiPradaftarEmel', denganKongsi({ k: S.k, s: S.s, emel: emel, laman: nilaiPerangkap() })).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           if (res.data.langkah === 'PROFIL') { S.wakilBaharu = true; return pradaftarProfil(); }
@@ -1253,7 +1302,7 @@
       onHantar: function (profil, minat, btn, kotak) {
         if (adaKeluarga()) { S.minatWakil = minat; return pradaftarKeluarga(); }   // dihantar bersama keluarga
         sibuk(btn, true);
-        panggil('apiPradaftarProfil', { k: S.k, s: S.s, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, ahli: S.ahli, laman: nilaiPerangkap() }).then(function (res) {
+        panggil('apiPradaftarProfil', denganKongsi({ k: S.k, s: S.s, emel: S.emel, profil: profil, minat_ikram: minat.minat_ikram, minat_berkala: minat.minat_berkala, ahli: S.ahli, laman: nilaiPerangkap() })).then(function (res) {
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           S.profil = null;
@@ -1275,7 +1324,7 @@
         var payload = S.wakilBaharu
           ? { k: S.k, s: S.s, emel: S.emel, profil: S.profil, minat_ikram: !!m.minat_ikram, minat_berkala: !!m.minat_berkala, ahli: S.ahli, keluarga: keluarga, laman: nilaiPerangkap() }
           : { k: S.k, s: S.s, emel: S.emel, keluarga: keluarga, laman: nilaiPerangkap() };
-        hantarKeluarga(S.wakilBaharu ? 'apiPradaftarProfil' : 'apiPradaftarEmel', payload, btn, kotak, tandaPerlu, function (d) {
+        hantarKeluarga(S.wakilBaharu ? 'apiPradaftarProfil' : 'apiPradaftarEmel', denganKongsi(payload), btn, kotak, tandaPerlu, function (d) {
           S.profil = null;
           pradaftarSelesai(d.semula, d.nama, d.kemaskini);
         });
@@ -1326,7 +1375,9 @@
     setSubjudul('Daftar Kehadiran');
     skrinPilihStatus({
       tajuk: 'Rekod kehadiran anda',
-      pengenalan: 'Sila pilih status anda.',
+      pengenalan: S.cfg.pradaftarSahaja
+        ? 'Check-in untuk peserta yang telah mendaftar awal sahaja. Sila pilih status anda.'
+        : 'Sila pilih status anda.',
       kecilBukan: 'Masukkan emel untuk merekod kehadiran',
       kecilAhli: 'Masukkan emel untuk merekod kehadiran',
       bukanAhli: function () { S.ahli = false; checkinLangkahPertama(); },
@@ -1339,9 +1390,13 @@
   function checkinEmel() {
     skrinEmel({
       tajuk: 'Masukkan emel anda',
-      pengenalan: adaKeluarga()
-        ? 'Anda check-in sebagai wakil keluarga. Seterusnya, nyatakan ahli keluarga yang hadir bersama anda.'
-        : 'Jika anda pernah berdaftar, kehadiran anda akan terus direkodkan.',
+      pengenalan: S.cfg.pradaftarSahaja
+        ? (adaKeluarga()
+          ? 'Gunakan emel yang sama seperti semasa pra-daftar. Wakil keluarga yang mendaftar check-in untuk semua.'
+          : 'Gunakan emel yang sama seperti semasa pra-daftar.')
+        : (adaKeluarga()
+          ? 'Anda check-in sebagai wakil keluarga. Seterusnya, nyatakan ahli keluarga yang hadir bersama anda.'
+          : 'Jika anda pernah berdaftar, kehadiran anda akan terus direkodkan.'),
       langkah: 'Langkah 1',
       kembali: mulaCheckin,
       onHantar: function (emel, btn, kotak) {
@@ -1381,7 +1436,9 @@
   function checkinKeluarga() {
     skrinKeluarga({
       tajuk: 'Siapa yang hadir bersama anda hari ini?',
-      pengenalan: 'Masukkan emel setiap dewasa yang hadir. Bagi anak, hanya umur dan jantina.',
+      pengenalan: S.cfg.pradaftarSahaja
+        ? 'Masukkan ahli keluarga yang anda daftarkan semasa pra-daftar dan hadir hari ini. Gunakan emel yang sama bagi setiap dewasa.'
+        : 'Masukkan emel setiap dewasa yang hadir. Bagi anak, hanya umur dan jantina.',
       nota: 'Sudah check-in tadi? Isi senarai penuh sekali lagi. Sesiapa yang telah direkod tidak akan dikira dua kali.',
       langkah: S.wakilBaharu ? 'Langkah 3' : 'Langkah 2',
       butangLabel: 'Rekod kehadiran',
