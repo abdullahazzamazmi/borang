@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-s2hywvcPnq03IpH1IIssm1XGkFTIOjFc3oVnnnH6VbU='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Oqwji0Ggw8kighAFOgou8MygZeqpl75PZPPzoE0ntJk='; style-src 'unsafe-inline'; img-src data:; connect-src https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -301,6 +301,7 @@
   @keyframes pusing { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .pemutar, .pemutar-kecil { animation-duration: 3s; } }
   @media (min-width: 600px) { .bekas { padding-top: 28px; } .kad { padding: 26px 26px; } }
+.input-semak { font-size: 1.5rem; letter-spacing: .5em; text-align: center; max-width: 9rem; font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -508,6 +509,13 @@
   /** Kendalikan ralat: pautan tidak sah → skrin penuh; lain-lain → kotak ralat. */
   function urusRalat(res, kotak) {
     if (res.code === 'TIDAK_SAH') return skrinRalat(res.message);
+    if (res.code === 'SEMAK_TAMAT') {   // v1.13.0: sesi semakan QR tamat → mula semula dari emel
+      S.qrSemak = null; S.hadirPilih = null;
+      checkinEmel();
+      var k = document.querySelector('.kotak-ralat');
+      if (k) tunjukRalat(k, res.message);
+      return;
+    }
     tunjukRalat(kotak, res.message || 'Maaf, berlaku ralat.');
   }
 
@@ -1414,7 +1422,11 @@
           sibuk(btn, false);
           if (res.status !== 'ok') return urusRalat(res, kotak);
           if (res.data.langkah === 'PROFIL') { S.wakilBaharu = true; return checkinProfil(); }
-          if (res.data.langkah === 'KELUARGA') { S.wakilBaharu = false; S.adaPautan = !!res.data.adaPautan; return checkinKeluarga(); }
+          if (res.data.langkah === 'SEMAK') { S.wakilBaharu = false; S.semakDikunci = false; return checkinSemak(res.data.jenis); }
+          if (res.data.langkah === 'KELUARGA') {
+            S.wakilBaharu = false; S.adaPautan = !!res.data.adaPautan; S.semakDikunci = !!res.data.dikunci;
+            return checkinKeluarga();
+          }
           checkinSelesai(res.data.nama);
         });
       }
@@ -1448,7 +1460,9 @@
       pengenalan: S.cfg.pradaftarSahaja
         ? 'Masukkan ahli keluarga yang anda daftarkan semasa pra-daftar dan hadir hari ini. Gunakan emel yang sama bagi setiap dewasa.'
         : 'Masukkan emel setiap dewasa yang hadir. Bagi anak, hanya umur dan jantina.',
-      nota: S.adaPautan
+      nota: S.semakDikunci
+        ? 'Terlalu banyak cubaan semakan. Sila dapatkan bantuan petugas di kaunter, atau isi senarai di bawah.'
+        : S.adaPautan
         ? 'Lebih mudah: buka pautan check-in dalam emel pengesahan atau peringatan pra-daftar anda. Senarai keluarga anda akan dipaparkan untuk ditanda.'
         : 'Sudah check-in tadi? Isi senarai penuh sekali lagi. Sesiapa yang telah direkod tidak akan dikira dua kali.',
       langkah: S.wakilBaharu ? 'Langkah 3' : 'Langkah 2',
@@ -1465,6 +1479,55 @@
         });
       }
     });
+  }
+
+  /**
+   * v1.13.0: semakan ringkas sebelum senarai keluarga dipaparkan (QR di lokasi).
+   * jenis: 'TELEFON' (4 digit terakhir) atau 'LAHIR' (tahun lahir). Semakan sebenar di pelayan.
+   */
+  function checkinSemak(jenis) {
+    var telefon = jenis !== 'LAHIR';
+    var kotak = kotakRalat();
+    var inp = h('input', { attrs: { type: 'text', id: 'semak', name: 'semak', inputmode: 'numeric', autocomplete: 'off', maxlength: '4', pattern: '[0-9]{4}', 'class': 'input-semak' } });
+    var w = medan(telefon ? '4 digit terakhir nombor telefon' : 'Tahun lahir', inp, {
+      wajib: true,
+      bantuan: telefon ? 'Nombor telefon yang anda berikan semasa mendaftar. Contoh: 0123456789 → 6789' : 'Contoh: 1988',
+      mesej: 'Masukkan 4 digit.'
+    });
+    var btn = butang('Teruskan', { type: 'submit' });
+    var form = h('form', { attrs: { novalidate: true } }, [
+      h('div', { 'class': 'langkah', text: 'Langkah 2' }),
+      h('h1', { text: 'Semakan ringkas' }),
+      h('p', { 'class': 'redup', text: telefon
+        ? 'Untuk melindungi maklumat keluarga anda, masukkan 4 digit terakhir nombor telefon anda.'
+        : 'Untuk melindungi maklumat keluarga anda, masukkan tahun lahir anda.' }),
+      w, perangkap(), kotak, btn
+    ]);
+    var manual = butang('Isi senarai sendiri', { kelas: 'btn-pautan', klik: function () { S.adaPautan = false; checkinKeluarga(); } });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      sorokRalat(kotak);
+      var v = inp.value.replace(/\D/g, '');
+      if (v.length !== 4) { tandaSalah(w, true); inp.focus(); return; }
+      tandaSalah(w, false);
+      sibuk(btn, true);
+      panggil('apiCheckinSemak', { k: S.k, emel: S.emel, jawapan: v, laman: nilaiPerangkap() }).then(function (res) {
+        sibuk(btn, false);
+        if (res.status === 'ok') {
+          S.qrSemak = res.data.s;   // memori sahaja; tamat 10 minit di pelayan
+          S.cfg.peribadi = res.data.peribadi;
+          S.cfg.bolehTambah = !!res.data.bolehTambah;
+          S.hadirPilih = null;
+          return mulaHadir();
+        }
+        if (res.code === 'DIKUNCI') { S.semakDikunci = true; S.adaPautan = false; return checkinKeluarga(); }
+        inp.value = '';
+        inp.focus();
+        urusRalat(res, kotak);
+      });
+    });
+    papar(kadSesi(), h('section', { 'class': 'kad' }, [form, manual, butang('Kembali', { kelas: 'btn-pautan', klik: checkinEmel })]));
+    setTimeout(function () { inp.focus(); }, 50);
   }
 
   function checkinSelesai(nama) {
@@ -1739,6 +1802,11 @@
   function labelDewasa(d) { return (d.hubungan || 'Dewasa') + (d.nama ? ' — ' + d.nama : ''); }
   function labelAnak(a) { return 'Anak · ' + a.jantina + ', ' + (Number(a.umur) === 0 ? 'bawah setahun' : a.umur + ' tahun'); }
 
+  /** v1.13.0: senarai yang sama digunakan oleh pautan peribadi (t=hadir) dan QR + semakan (t=checkin). */
+  function modQr() { return S.t === 'checkin'; }
+  function fnTanda() { return modQr() ? 'apiCheckinTanda' : 'apiHadirHantar'; }
+  function asasTanda() { return modQr() ? { k: S.k, emel: S.emel, s: S.qrSemak } : { p: S.p }; }
+
   function mulaHadir() {
     setSubjudul('Daftar Kehadiran');
     var x = S.cfg.peribadi;
@@ -1779,7 +1847,7 @@
       btn._label.textContent = btn._teks;
     }
     function payload() {
-      return { p: S.p, versi: x.versi, dewasa: dipilih('dewasa', x.dewasa), anak: dipilih('anak', x.anak), laman: nilaiPerangkap() };
+      return Object.assign(asasTanda(), { versi: x.versi, dewasa: dipilih('dewasa', x.dewasa), anak: dipilih('anak', x.anak), laman: nilaiPerangkap() });
     }
 
     var tambah = null;
@@ -1791,6 +1859,7 @@
     }
 
     var form = h('form', { attrs: { novalidate: true } }, [
+      modQr() ? h('div', { 'class': 'langkah', text: 'Langkah 3' }) : null,
       h('h1', { text: tajukNama('Assalamualaikum', x.nama, 'Rekod kehadiran') }),
       h('p', { 'class': 'redup', text: x.keluarga
         ? 'Tandakan ahli keluarga yang hadir bersama anda hari ini. Biarkan kosong bagi yang tidak hadir.'
@@ -1802,7 +1871,7 @@
       e.preventDefault();
       sorokRalat(kotak);
       sibuk(btn, true);
-      panggil('apiHadirHantar', payload()).then(function (res) {
+      panggil(fnTanda(), payload()).then(function (res) {
         sibuk(btn, false);
         if (res.status !== 'ok') return urusRalat(res, kotak);
         hadirSelesai(res.data);
@@ -1824,23 +1893,26 @@
       butangLabel: 'Rekod kehadiran',
       kembali: mulaHadir,
       onHantar: function (keluarga, btn, kotak, tandaPerlu) {
-        var payload = {
-          p: S.p, versi: x.versi, keluarga: keluarga, laman: nilaiPerangkap(),
+        var payload = Object.assign(asasTanda(), {
+          versi: x.versi, keluarga: keluarga, laman: nilaiPerangkap(),
           dewasa: x.dewasa.map(function (_, i) { return i; }).filter(function (i) { return !x.dewasa[i].sudah && p.dewasa[i]; }),
           anak: x.anak.map(function (_, i) { return i; }).filter(function (i) { return !x.anak[i].sudah && p.anak[i]; })
-        };
-        hantarKeluarga('apiHadirHantar', payload, btn, kotak, tandaPerlu, hadirSelesai);
+        });
+        hantarKeluarga(fnTanda(), payload, btn, kotak, tandaPerlu, hadirSelesai);
       }
     });
   }
 
   function hadirSelesai(d) {
     S.hadirPilih = null;
+    S.qrSemak = null;
     var bil = Number(d.bil) || 1;
     skrinSelesai(tajukNama('Terima kasih', d.nama, 'Kehadiran direkodkan'), [
       bil > 1 ? 'Kehadiran ' + bil + ' orang bagi sesi ini telah direkodkan.' : 'Kehadiran anda bagi sesi ini telah direkodkan.',
       'Selamat mengikuti program.'
-    ], 'Jika ada ahli yang datang lewat, buka semula pautan ini dan tandakan mereka. Yang telah direkod tidak akan dikira dua kali.');
+    ], modQr()
+      ? 'Jika ada ahli yang datang lewat, imbas semula kod QR dan tandakan mereka. Yang telah direkod tidak akan dikira dua kali.'
+      : 'Jika ada ahli yang datang lewat, buka semula pautan ini dan tandakan mereka. Yang telah direkod tidak akan dikira dua kali.');
   }
 
   // -------------------------------------------------------------------------
