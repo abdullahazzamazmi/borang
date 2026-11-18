@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-FaYwcRyLyC6aaPlrX+WxYGfCP+nqwi5Slsza0fhNW3k=' https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style; img-src data:; frame-src https://accounts.google.com/gsi/; connect-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8Ipc5dXtJ3ZGDBD5sdFKGPG5dXBvgicMTICmhwts88s=' https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style; img-src data:; frame-src https://accounts.google.com/gsi/; connect-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -11,6 +11,7 @@
   <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#0b2d5b">
   <style>
+[hidden] { display: none !important; }
   :root {
     /* Tema biru gelap IKRAM */
     --kepala: #0b2d5b;        /* bar kepala */
@@ -309,8 +310,8 @@
 .google-akaun { display: flex; align-items: center; gap: 8px; font-weight: 600; word-break: break-all; }
 .tanda-ok { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #1e7b4a; color: #fff; font-size: .8rem; flex: none; }
 .google-status .btn-pautan { padding-left: 0; }
-.atau { display: flex; align-items: center; gap: 12px; margin-top: 16px; color: var(--redup); font-size: .9rem; }
-.atau::before, .atau::after { content: ''; flex: 1; height: 1px; background: var(--sempadan); }
+.togol-manual { display: block; margin: 4px auto 8px; text-align: center; }
+.emel-manual { margin-top: 8px; }
 .medan.dikunci input { background: var(--latar); color: var(--redup); }
 </style>
 </head>
@@ -683,23 +684,34 @@
     var tambahan = opt.tambahan ? opt.tambahan() : null;   // v1.10.0: { el, sah() } contoh persetujuan perkongsian
 
     // v1.14.0: "Teruskan dengan Google" — emel diambil daripada akaun Google (tidak ditaip).
-    var blokGoogle = null;
+    // v1.14.3: Google ialah cara UTAMA. Medan emel disorok; dibuka melalui pautan "Tiada akaun Google?".
+    var blokGoogle = null, manual = null, togol = null;
     var form;
     if (adaGoogle()) {
       var slot = h('div', { 'class': 'google-slot' });
       var status = h('div', { 'class': 'google-status' });
-      var atau = h('div', { 'class': 'atau' }, [h('span', { text: 'atau taip emel anda' })]);
-      blokGoogle = h('div', { 'class': 'blok-google' }, [slot, status, atau]);
+      blokGoogle = h('div', { 'class': 'blok-google' }, [slot, status]);
+      manual = h('div', { 'class': 'emel-manual' }, [w]);
 
+      var keadaan = function (k) {   // 'awal' | 'manual' | 'google' | 'tanpa-gis'
+        slot.hidden = (k === 'google' || k === 'tanpa-gis');
+        manual.hidden = (k !== 'manual' && k !== 'tanpa-gis');
+        togol.hidden = (k !== 'awal');
+        btn.hidden = (k === 'awal');
+        if (k !== 'google') status.textContent = '';
+      };
+      togol = butang('Tiada akaun Google? Taip emel anda', {
+        kelas: 'btn-pautan togol-manual',
+        klik: function () { keadaan('manual'); setTimeout(function () { inp.focus(); }, 30); }
+      });
       var kunci = function (emel) {
         inp.value = emel;
         inp.readOnly = true;
         w.classList.add('dikunci');
-        slot.hidden = true;
-        atau.hidden = true;
+        keadaan('google');
         status.textContent = '';
         status.appendChild(h('span', { 'class': 'google-akaun' }, [h('span', { 'class': 'tanda-ok', text: '✓' }), h('span', { text: 'Log masuk sebagai ' + emel })]));
-        status.appendChild(butang('Guna emel lain', { kelas: 'btn-pautan', klik: buka }));
+        status.appendChild(butang('Guna akaun lain', { kelas: 'btn-pautan', klik: buka }));
       };
       var buka = function () {
         S.gtoken = null; S.emelGoogle = null;
@@ -707,14 +719,12 @@
         inp.readOnly = false;
         inp.value = '';
         w.classList.remove('dikunci');
-        status.textContent = '';
-        slot.hidden = false;
-        atau.hidden = false;
-        inp.focus();
+        sorokRalat(kotak);
+        keadaan('awal');
       };
       var terima = function (cred) {
         var emel = emelDariToken(cred);
-        if (!emel) { tunjukRalat(kotak, 'Log masuk Google tidak berjaya. Cuba lagi atau taip emel anda.'); return; }
+        if (!emel) { tunjukRalat(kotak, 'Log masuk Google tidak berjaya. Cuba lagi, atau tekan "Tiada akaun Google?" untuk taip emel.'); return; }
         S.gtoken = cred;
         S.emelGoogle = emel;
         kunci(emel);
@@ -722,18 +732,26 @@
         if (form.requestSubmit) form.requestSubmit(); else btn.click();
       };
       if (S.gtoken && S.emelGoogle) kunci(S.emelGoogle);
+      else if (S.emel) keadaan('manual');   // kembali dari langkah seterusnya dengan emel ditaip
+      else keadaan('awal');
       muatGis(function (ok) {
-        if (!ok) { blokGoogle.hidden = true; return; }
+        if (!ok) { if (!S.gtoken) keadaan('tanpa-gis'); return; }
         google.accounts.id.initialize({ client_id: S.cfg.google, callback: function (r) { terima(r && r.credential); }, auto_select: false, ux_mode: 'popup', itp_support: true });
-        google.accounts.id.renderButton(slot, { type: 'standard', theme: 'outline', size: 'large', text: 'continue_with', shape: 'pill', logo_alignment: 'center', locale: 'ms', width: Math.max(220, Math.min(400, slot.clientWidth || 320)) });
+        google.accounts.id.renderButton(slot, { type: 'standard', theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'pill', logo_alignment: 'center', locale: 'ms', width: Math.max(220, Math.min(400, slot.clientWidth || 320)) });
       });
     }
 
-    form = h('form', { attrs: { novalidate: true } }, [
+    form = h('form', { attrs: { novalidate: true } }, blokGoogle ? [
       h('div', { 'class': 'langkah', text: opt.langkah || 'Langkah 1' }),
       h('h1', { text: opt.tajuk }),
       opt.pengenalan ? h('p', { 'class': 'redup', text: opt.pengenalan }) : null,
-      blokGoogle, w, tambahan ? tambahan.el : null, perangkap(), kotak, btn
+      tambahan ? tambahan.el : null,   // persetujuan ditanda sebelum log masuk
+      blokGoogle, togol, manual, perangkap(), kotak, btn
+    ] : [
+      h('div', { 'class': 'langkah', text: opt.langkah || 'Langkah 1' }),
+      h('h1', { text: opt.tajuk }),
+      opt.pengenalan ? h('p', { 'class': 'redup', text: opt.pengenalan }) : null,
+      w, tambahan ? tambahan.el : null, perangkap(), kotak, btn
     ]);
     form.addEventListener('submit', function (e) {
       e.preventDefault();
