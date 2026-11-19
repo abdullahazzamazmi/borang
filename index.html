@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-8Ipc5dXtJ3ZGDBD5sdFKGPG5dXBvgicMTICmhwts88s=' https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style; img-src data:; frame-src https://accounts.google.com/gsi/; connect-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-iIuBZaj/7S+IVmbnUUpdSz0AkFh/ygLVlrdapcHv1t4=' https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style; img-src data:; frame-src https://accounts.google.com/gsi/; connect-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -1189,6 +1189,8 @@
       st.anak.forEach(function (a, i) { senaraiAnak.appendChild(barisAnak(a, i)); });
       wIzin.style.display = st.dewasa.length ? '' : 'none';
       wPenjaga.style.display = st.anak.length ? '' : 'none';
+      // v1.14.5: datang seorang → soalan hubungan wakil tidak dipaparkan / tidak diwajibkan.
+      if (wHubWakil) { wHubWakil.style.display = jumlah() ? '' : 'none'; if (!jumlah()) tandaSalah(wHubWakil, false); }
       lukisBarisan();
     }
 
@@ -1198,7 +1200,7 @@
       var tanda = function (w, salah, mesej) { tandaSalah(w, salah, mesej); if (salah && !pertama) pertama = w; };
       var dilihat = {};
       dilihat[String(S.emel || '').toLowerCase()] = 'emel anda';
-      if (wHubWakil) tanda(wHubWakil, !st.hubungan_wakil);
+      if (wHubWakil && jumlah()) tanda(wHubWakil, !st.hubungan_wakil);
       Array.prototype.forEach.call(senaraiDewasa.children, function (kad, i) {
         var d = kad._d, w = kad._w;
         var e = d.emel;
@@ -1278,7 +1280,7 @@
         setuju_penjaga: st.anak.length > 0 && cbPenjaga.checked,
         izin_dewasa: st.dewasa.length > 0 && cbIzin.checked
       };
-      if (hubungan && !opt.tanpaHubunganWakil) keluarga.hubungan_wakil = st.hubungan_wakil;
+      if (hubungan && !opt.tanpaHubunganWakil) keluarga.hubungan_wakil = jumlah() ? st.hubungan_wakil : '';   // v1.14.5: seorang → kosong
       opt.onHantar(keluarga, btn, kotak, tandaPerlu);
     });
 
