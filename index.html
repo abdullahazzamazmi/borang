@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-iIuBZaj/7S+IVmbnUUpdSz0AkFh/ygLVlrdapcHv1t4=' https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style; img-src data:; frame-src https://accounts.google.com/gsi/; connect-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-p2MfIanBafDIWNUkfo8iJSldDbSIDDBUUQh6uUt6CCs=' https://accounts.google.com/gsi/client; style-src 'unsafe-inline' https://accounts.google.com/gsi/style; img-src data:; frame-src https://accounts.google.com/gsi/; connect-src https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; base-uri 'none'; form-action 'none'">
   <!-- URL /exec projek "JPM Borang Awam". Tukar baris ini sahaja jika URL berubah. -->
   <meta name="borang-api" content="https://script.google.com/macros/s/AKfycbyZnzBhV8A7aLm5PQbEdfagiO1tefhZv9xHKfaUWyHwo3fmR8RZpLeNclHUHorpS6ue-A/exec">
   <title>IKRAM — Borang Awam</title>
@@ -313,6 +313,7 @@
 .togol-manual { display: block; margin: 4px auto 8px; text-align: center; }
 .emel-manual { margin-top: 8px; }
 .medan.dikunci input { background: var(--latar); color: var(--redup); }
+.baki-tempat { margin: 0 0 16px; padding: 10px 14px; border-radius: 10px; background: var(--utama-lembut); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -522,6 +523,7 @@
   /** Kendalikan ralat: pautan tidak sah → skrin penuh; lain-lain → kotak ralat. */
   function urusRalat(res, kotak) {
     if (res.code === 'TIDAK_SAH') return skrinRalat(res.message);
+    if (res.code === 'PENUH') return skrinPenuh();   // v1.15.0
     if (res.code === 'GOOGLE_TAMAT') {   // v1.14.0: token Google tamat → log masuk semula dari awal borang
       S.gtoken = null; S.emelGoogle = null;
       return skrinLogMasukSemula(res.message);
@@ -597,6 +599,16 @@
   // Skrin umum
   // -------------------------------------------------------------------------
 
+  /** v1.15.0: pra-daftar penuh (had pendaftaran program). Kad program dikekalkan. */
+  function skrinPenuh() {
+    setSubjudul('Pendaftaran Awal');
+    papar(kadSesi(), h('section', { 'class': 'kad tengah' }, [
+      ikon('amaran', 'ralat'),
+      h('h1', { text: 'Pendaftaran sudah penuh' }),
+      h('p', { 'class': 'redup', text: 'Terima kasih atas minat anda. Sila hubungi penganjur jika ada pertanyaan.' })
+    ]));
+  }
+
   function skrinRalat(mesej) {
     setSubjudul('Borang Awam');
     papar(h('section', { 'class': 'kad tengah' }, [
@@ -626,6 +638,8 @@
       h('section', { 'class': 'kad' }, [
         h('h1', { text: opt.tajuk }),
         opt.pengenalan ? h('p', { 'class': 'redup', text: opt.pengenalan }) : null,
+        (typeof opt.baki === 'number' && opt.baki > 0)
+          ? h('p', { 'class': 'baki-tempat', text: 'Tinggal ' + opt.baki + ' tempat sahaja.' }) : null,
         butang('Saya bukan Ahli IKRAM', { kecil: opt.kecilBukan, klik: opt.bukanAhli, kelas: 'btn-pilihan' }),
         butang('Saya Ahli IKRAM', { kecil: opt.kecilAhli, klik: opt.ahli, kelas: 'btn-garis btn-pilihan' })
       ])
@@ -1373,7 +1387,9 @@
 
   function mulaPradaftar() {
     setSubjudul('Pendaftaran Awal');
+    if (S.cfg.penuh) return skrinPenuh(S.cfg.mesej);   // v1.15.0: had pendaftaran dicapai
     skrinPilihStatus({
+      baki: S.cfg.baki,
       tajuk: adaKeluarga() ? 'Daftar awal untuk anda sekeluarga' : 'Daftar awal untuk program ini',
       pengenalan: adaKeluarga()
         ? 'Tempah tempat untuk anda dan keluarga. Anda akan mengisi maklumat diri dahulu, kemudian senarai ahli keluarga.'
